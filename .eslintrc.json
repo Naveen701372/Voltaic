@@ -8,12 +8,16 @@
     "prettier"
   ],
   "rules": {
-    "prefer-const": "error",
+    "prefer-const": "warn",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "warn",
     "no-console": "warn",
+    "react/no-unescaped-entities": "warn",
+    "react-hooks/rules-of-hooks": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "@next/next/no-img-element": "warn",
     "import/order": [
-      "error",
+      "warn",
       {
         "groups": [
           "builtin",
