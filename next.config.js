@@ -1,33 +1,59 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Simplified configuration for Next.js 14
-    reactStrictMode: true,
+    // Force specific configuration for port 3000 stability
+    reactStrictMode: false, // Disable strict mode to prevent double rendering issues
 
-    // Disable SWC minification to prevent chunk issues
+    // Disable SWC minification completely
     swcMinify: false,
 
-    // Webpack configuration
+    // Aggressive webpack configuration for port 3000
     webpack: (config, { dev, isServer }) => {
         if (dev) {
-            // Disable caching in development
+            // Completely disable all caching
             config.cache = false;
+
+            // Force specific module resolution
+            config.resolve.fallback = {
+                ...config.resolve.fallback,
+                fs: false,
+                net: false,
+                tls: false,
+            };
+
+            // Disable hot reloading optimizations that might cause issues
+            config.optimization = {
+                ...config.optimization,
+                removeAvailableModules: false,
+                removeEmptyChunks: false,
+                splitChunks: false, // Disable chunk splitting completely
+            };
         }
 
         return config;
     },
 
-    // Experimental features for Next.js 14
-    experimental: {
-        appDir: true,
-    },
+    // Remove all experimental features
+    experimental: {},
 
-    // Development indicators
+    // Disable all development indicators
     devIndicators: {
         buildActivity: false,
     },
 
-    // Disable source maps
+    // Force specific server configuration
+    serverRuntimeConfig: {},
+    publicRuntimeConfig: {},
+
+    // Disable source maps completely
     productionBrowserSourceMaps: false,
+
+    // Force specific asset configuration
+    assetPrefix: '',
+
+    // Disable image optimization that might interfere
+    images: {
+        unoptimized: true,
+    },
 };
 
 module.exports = nextConfig; 

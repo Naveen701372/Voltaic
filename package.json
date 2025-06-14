@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:clean": "./scripts/dev.sh",
+    "dev:port3000": "./scripts/fix-port-3000.sh",
     "kill-ports": "./scripts/kill-ports.sh",
     "debug": "./scripts/debug-ports.sh",
     "build": "next build",
