@@ -1,30 +1,32 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Clean webpack configuration to prevent module loading issues
+    // Simplified configuration for Next.js 14
+    reactStrictMode: true,
+
+    // Disable SWC minification to prevent chunk issues
+    swcMinify: false,
+
+    // Webpack configuration
     webpack: (config, { dev, isServer }) => {
         if (dev) {
-            // Ensure consistent module resolution
-            config.resolve.alias = {
-                ...config.resolve.alias,
-            };
-
-            // Force deterministic module IDs
-            config.optimization = {
-                ...config.optimization,
-                moduleIds: 'deterministic',
-                chunkIds: 'deterministic',
-            };
+            // Disable caching in development
+            config.cache = false;
         }
 
         return config;
     },
 
-    // Use stable experimental features only
+    // Experimental features for Next.js 14
     experimental: {
-        // Remove turbo option as it's causing warnings
+        appDir: true,
     },
 
-    // Enable source maps for better debugging
+    // Development indicators
+    devIndicators: {
+        buildActivity: false,
+    },
+
+    // Disable source maps
     productionBrowserSourceMaps: false,
 };
 

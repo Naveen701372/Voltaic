@@ -1,8 +1,15 @@
 'use client';
 
 import { Sparkles, Zap, Code, Rocket, ArrowRight, Github, Twitter } from 'lucide-react';
+import { setupChunkErrorHandler } from '@/lib/chunk-error-handler';
+import { useEffect } from 'react';
 
 export default function Home() {
+  // Initialize chunk error handler
+  useEffect(() => {
+    setupChunkErrorHandler();
+  }, []);
+
   const features = [
     {
       icon: <Sparkles className="w-6 h-6" />,
