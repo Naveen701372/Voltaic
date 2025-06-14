@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
 export async function POST(request: NextRequest) {
     try {
+        // Initialize Anthropic client inside the function to avoid build-time errors
+        const anthropic = new Anthropic({
+            apiKey: process.env.ANTHROPIC_API_KEY,
+        });
+
         const { enhancedSpec } = await request.json();
 
         if (!enhancedSpec) {

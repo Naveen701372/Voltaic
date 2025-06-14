@@ -5,14 +5,6 @@ import Anthropic from '@anthropic-ai/sdk';
 
 import { TEST_CONFIG } from '@/config/testConfig';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
-
-const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
 // Helper function to simulate streaming for test data
 async function simulateStreaming(text: string, sendEvent: (event: string, data: any) => void, agentId: string) {
     console.log(`🎬 [STREAMING] Starting simulation for ${agentId} with ${text.length} characters`);
@@ -39,6 +31,15 @@ async function simulateStreaming(text: string, sendEvent: (event: string, data: 
 }
 
 export async function POST(request: NextRequest) {
+    // Initialize AI clients inside the function to avoid build-time errors
+    const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const anthropic = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
     const { userIdea } = await request.json();
 
     if (!userIdea) {
