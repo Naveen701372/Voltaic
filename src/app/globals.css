@@ -3,25 +3,30 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
   }
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
   font-family: Arial, Helvetica, sans-serif;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 @layer utilities {
@@ -56,6 +61,42 @@ html {
       transform: rotate(360deg);
     }
   }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 640px) {
+    .glass-card {
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+    }
+
+    .glass-button {
+      min-height: 44px;
+      /* Better touch target */
+      touch-action: manipulation;
+      /* Prevent zoom on double tap */
+    }
+
+    .glass-input {
+      min-height: 44px;
+      /* Better touch target */
+      font-size: 16px !important;
+      /* Prevent zoom on iOS */
+    }
+  }
+
+  /* Smooth scrolling for all devices */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Better mobile navigation */
+  @media (max-width: 768px) {
+    nav {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+  }
 }
 
 @layer components {
@@ -69,6 +110,14 @@ html {
     @apply backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl shadow-lg transition-all duration-200 hover:bg-white/20 hover:border-white/30 text-white font-medium;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    /* Better mobile touch feedback */
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+    tap-highlight-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-button:active {
+    @apply scale-95 bg-white/15;
+    transform: scale(0.95);
   }
 
   .glass-button-primary {
@@ -83,5 +132,63 @@ html {
     @apply backdrop-blur-xl bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    /* Better mobile input handling */
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .glass-input:focus {
+    @apply bg-white/10 border-blue-400/50;
+  }
+
+  /* Mobile-optimized animations */
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-slide-up {
+      animation: slideUp 0.6s ease-out forwards;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+
+    .animation-delay-200 {
+      animation-delay: 200ms;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Better mobile typography */
+  @media (max-width: 640px) {
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.2;
+    }
+
+    p {
+      line-height: 1.6;
+    }
   }
 }
