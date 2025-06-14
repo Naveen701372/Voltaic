@@ -60,9 +60,14 @@ export default function Home() {
                 <a href="#docs" className="text-white/70 hover:text-white transition-colors">
                   Docs
                 </a>
-                <button className="glass-button glass-button-primary px-4 py-2 text-sm">
-                  Get Started
-                </button>
+                <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors">
+                  Sign In
+                </a>
+                <a href="/auth/signup">
+                  <button className="glass-button glass-button-primary px-4 py-2 text-sm">
+                    Get Started
+                  </button>
+                </a>
               </div>
 
               {/* Mobile Menu Button */}
@@ -87,9 +92,14 @@ export default function Home() {
                   <a href="#docs" className="text-white/70 hover:text-white transition-colors py-2">
                     Docs
                   </a>
-                  <button className="glass-button glass-button-primary px-4 py-2 text-sm mt-2">
-                    Get Started
-                  </button>
+                  <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors py-2">
+                    Sign In
+                  </a>
+                  <a href="/auth/signup">
+                    <button className="glass-button glass-button-primary px-4 py-2 text-sm mt-2">
+                      Get Started
+                    </button>
+                  </a>
                 </div>
               </div>
             )}
@@ -120,18 +130,22 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-20 sm:mb-24 px-4">
-              <button className="glass-button w-full sm:min-w-56 sm:w-auto whitespace-nowrap px-8 py-4 text-lg">
-                <span className="flex items-center justify-center gap-2">
-                  Start Building Free
-                  <ArrowRight className="w-5 h-5" />
-                </span>
-              </button>
-              <button className="glass-button glass-button-dark w-full sm:min-w-56 sm:w-auto whitespace-nowrap px-8 py-4 text-lg">
-                <span className="flex items-center justify-center gap-2">
-                  <Github className="w-5 h-5" />
-                  View on GitHub
-                </span>
-              </button>
+              <a href="/auth/signup" className="w-full sm:w-auto">
+                <button className="glass-button w-full sm:min-w-56 whitespace-nowrap px-8 py-4 text-lg">
+                  <span className="flex items-center justify-center gap-2">
+                    Start Building Free
+                    <ArrowRight className="w-5 h-5" />
+                  </span>
+                </button>
+              </a>
+              <a href="https://github.com/Naveen701372/Voltaic" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                <button className="glass-button glass-button-dark w-full sm:min-w-56 whitespace-nowrap px-8 py-4 text-lg">
+                  <span className="flex items-center justify-center gap-2">
+                    <Github className="w-5 h-5" />
+                    View on GitHub
+                  </span>
+                </button>
+              </a>
             </div>
           </div>
 
@@ -209,12 +223,16 @@ export default function Home() {
                 Join thousands of developers who are already building faster with AI.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-                <button className="glass-button w-full sm:min-w-56 sm:w-auto whitespace-nowrap px-8 py-4 text-lg">
-                  Start Free Trial
-                </button>
-                <button className="glass-button glass-button-dark w-full sm:min-w-56 sm:w-auto whitespace-nowrap px-8 py-4 text-lg">
-                  Schedule Demo
-                </button>
+                <a href="/auth/signup" className="w-full sm:w-auto">
+                  <button className="glass-button w-full sm:min-w-56 whitespace-nowrap px-8 py-4 text-lg">
+                    Start Free Trial
+                  </button>
+                </a>
+                <a href="/auth/signin" className="w-full sm:w-auto">
+                  <button className="glass-button glass-button-dark w-full sm:min-w-56 whitespace-nowrap px-8 py-4 text-lg">
+                    Schedule Demo
+                  </button>
+                </a>
               </div>
             </div>
           </div>

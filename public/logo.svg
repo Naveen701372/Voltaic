@@ -1,0 +1,63 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle with Gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="boltGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FBBF24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)" opacity="0.1"/>
+  <circle cx="256" cy="256" r="220" fill="none" stroke="url(#bgGradient)" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Main Lightning Bolt -->
+  <path d="M320 180L240 280H280L192 380L272 280H232L320 180Z" 
+        fill="url(#boltGradient)" 
+        filter="url(#glow)"
+        stroke="#FFFFFF" 
+        stroke-width="3" 
+        stroke-linejoin="round"/>
+  
+  <!-- Secondary Lightning Elements -->
+  <path d="M180 160L160 200L180 200L160 240" 
+        fill="none" 
+        stroke="url(#boltGradient)" 
+        stroke-width="4" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        opacity="0.6"/>
+  
+  <path d="M352 280L372 240L352 240L372 200" 
+        fill="none" 
+        stroke="url(#boltGradient)" 
+        stroke-width="4" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        opacity="0.6"/>
+  
+  <!-- Energy Particles -->
+  <circle cx="140" cy="180" r="3" fill="#FBBF24" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="380" cy="260" r="3" fill="#FBBF24" opacity="0.8">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="200" cy="120" r="2" fill="#F59E0B" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="340" cy="380" r="2" fill="#F59E0B" opacity="0.6">
+    <animate attributeName="opacity" values="0.2;0.6;0.2" dur="3s" repeatCount="indefinite"/>
+  </circle>
+</svg> 

@@ -1,4 +1,4 @@
-import { forwardRef, InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { forwardRef, InputHTMLAttributes, TextareaHTMLAttributes, ReactNode } from 'react';
 
 import { cn, getGlassInputStyles } from './utils';
 
@@ -7,6 +7,7 @@ interface GlassInputHTMLProps extends Omit<InputHTMLAttributes<HTMLInputElement>
     onChange?: (value: string) => void;
     error?: string;
     label?: string;
+    icon?: ReactNode;
 }
 
 interface GlassTextareaHTMLProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange'> {
@@ -14,6 +15,7 @@ interface GlassTextareaHTMLProps extends Omit<TextareaHTMLAttributes<HTMLTextAre
     onChange?: (value: string) => void;
     error?: string;
     label?: string;
+    icon?: ReactNode;
 }
 
 export const GlassInput = forwardRef<HTMLInputElement, GlassInputHTMLProps>(
@@ -26,6 +28,7 @@ export const GlassInput = forwardRef<HTMLInputElement, GlassInputHTMLProps>(
             disabled = false,
             error,
             label,
+            icon,
             className,
             ...props
         },
@@ -34,6 +37,7 @@ export const GlassInput = forwardRef<HTMLInputElement, GlassInputHTMLProps>(
         const inputStyles = cn(
             getGlassInputStyles({ error: !!error }),
             'rounded-xl',
+            icon ? 'pl-10' : '',
             disabled ? 'opacity-50 cursor-not-allowed' : '',
             className
         );
@@ -51,16 +55,23 @@ export const GlassInput = forwardRef<HTMLInputElement, GlassInputHTMLProps>(
                         {label}
                     </label>
                 )}
-                <input
-                    ref={ref}
-                    type={type}
-                    value={value}
-                    onChange={handleChange}
-                    placeholder={placeholder}
-                    disabled={disabled}
-                    className={inputStyles}
-                    {...props}
-                />
+                <div className="relative">
+                    {icon && (
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50">
+                            {icon}
+                        </div>
+                    )}
+                    <input
+                        ref={ref}
+                        type={type}
+                        value={value}
+                        onChange={handleChange}
+                        placeholder={placeholder}
+                        disabled={disabled}
+                        className={inputStyles}
+                        {...props}
+                    />
+                </div>
                 {error && (
                     <p className="text-sm text-red-500/80 mt-1">{error}</p>
                 )}
@@ -78,6 +89,7 @@ export const GlassTextarea = forwardRef<HTMLTextAreaElement, GlassTextareaHTMLPr
             disabled = false,
             error,
             label,
+            icon,
             className,
             rows = 4,
             ...props
@@ -87,6 +99,7 @@ export const GlassTextarea = forwardRef<HTMLTextAreaElement, GlassTextareaHTMLPr
         const textareaStyles = cn(
             getGlassInputStyles({ error: !!error }),
             'rounded-xl resize-none',
+            icon ? 'pl-10' : '',
             disabled ? 'opacity-50 cursor-not-allowed' : '',
             className
         );
@@ -104,16 +117,23 @@ export const GlassTextarea = forwardRef<HTMLTextAreaElement, GlassTextareaHTMLPr
                         {label}
                     </label>
                 )}
-                <textarea
-                    ref={ref}
-                    value={value}
-                    onChange={handleChange}
-                    placeholder={placeholder}
-                    disabled={disabled}
-                    rows={rows}
-                    className={textareaStyles}
-                    {...props}
-                />
+                <div className="relative">
+                    {icon && (
+                        <div className="absolute left-3 top-3 text-white/50">
+                            {icon}
+                        </div>
+                    )}
+                    <textarea
+                        ref={ref}
+                        value={value}
+                        onChange={handleChange}
+                        placeholder={placeholder}
+                        disabled={disabled}
+                        rows={rows}
+                        className={textareaStyles}
+                        {...props}
+                    />
+                </div>
                 {error && (
                     <p className="text-sm text-red-500/80 mt-1">{error}</p>
                 )}
