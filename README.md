@@ -69,8 +69,8 @@ Following Apple's latest WWDC Glass Design System:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/ideatomvp.git
-   cd ideatomvp
+   git clone https://github.com/Naveen701372/Voltaic.git
+   cd Voltaic
    ```
 
 2. **Install dependencies**
@@ -116,9 +116,10 @@ Following Apple's latest WWDC Glass Design System:
 ## 📁 Project Structure
 
 ```
-ideatomvp/
+Voltaic/
 ├── 📄 PRD.md                    # Product Requirements Document
 ├── 📄 README.md                 # This file
+├── 📄 TASKS.md                  # Development task list
 ├── 📁 app/                      # Next.js App Router
 │   ├── 📁 (auth)/              # Authentication routes
 │   ├── 📁 dashboard/            # User dashboard
@@ -130,7 +131,7 @@ ideatomvp/
 │   └── 📁 forms/               # Form components
 ├── 📁 lib/                     # Utilities and configurations
 │   ├── 📄 supabase.ts          # Supabase client
-│   ├── 📄 openai.ts            # OpenAI configuration
+│   ├── 📄 ai-agents.ts         # AI agent framework
 │   └── 📄 utils.ts             # Utility functions
 ├── 📁 styles/                  # Global styles
 ├── 📁 types/                   # TypeScript type definitions
@@ -341,9 +342,9 @@ We welcome contributions! Please follow these steps:
 - [Design System](./docs/design-system.md) - Component library
 
 ### Getting Help
-- **Issues:** [GitHub Issues](https://github.com/your-username/ideatomvp/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/your-username/ideatomvp/discussions)
-- **Email:** support@ideatomvp.com
+- **Issues:** [GitHub Issues](https://github.com/Naveen701372/Voltaic/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/Naveen701372/Voltaic/discussions)
+- **Email:** support@voltaic.dev
 
 ## 📄 License
 
@@ -353,9 +354,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Event:** THC Hackathon - HackTheVibe 2025
 - **Category:** SaaS
-- **Team:** [Your Team Name]
-- **Timeline:** 5 Days
-- **Demo Day:** [Date]
+- **Project:** Voltaic Platform
+- **Repository:** [https://github.com/Naveen701372/Voltaic](https://github.com/Naveen701372/Voltaic)
+- **Timeline:** 3 Weeks
+- **Demo Day:** TBD
 
 ## 🙏 Acknowledgments
 
