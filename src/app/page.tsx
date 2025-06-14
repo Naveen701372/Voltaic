@@ -63,7 +63,7 @@ export default function Home() {
                 <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors">
                   Sign In
                 </a>
-                <a href="/auth/signup">
+                <a href="/auth/signin">
                   <button className="glass-button glass-button-primary px-4 py-2 text-sm">
                     Get Started
                   </button>
@@ -95,7 +95,7 @@ export default function Home() {
                   <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors py-2">
                     Sign In
                   </a>
-                  <a href="/auth/signup">
+                  <a href="/auth/signin">
                     <button className="glass-button glass-button-primary px-4 py-2 text-sm mt-2">
                       Get Started
                     </button>
@@ -130,7 +130,7 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-20 sm:mb-24 px-4">
-              <a href="/auth/signup" className="w-full sm:w-auto">
+              <a href="/auth/signin" className="w-full sm:w-auto">
                 <button className="glass-button w-full sm:min-w-56 whitespace-nowrap px-8 py-4 text-lg">
                   <span className="flex items-center justify-center gap-2">
                     Start Building Free
@@ -223,7 +223,7 @@ export default function Home() {
                 Join thousands of developers who are already building faster with AI.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-                <a href="/auth/signup" className="w-full sm:w-auto">
+                <a href="/auth/signin" className="w-full sm:w-auto">
                   <button className="glass-button w-full sm:min-w-56 whitespace-nowrap px-8 py-4 text-lg">
                     Start Free Trial
                   </button>

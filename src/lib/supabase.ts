@@ -31,7 +31,6 @@ export const authConfig = {
     },
     redirects: {
         signIn: '/auth/signin',
-        signUp: '/auth/signup',
         signOut: '/',
         callback: '/auth/callback',
         error: '/auth/error',

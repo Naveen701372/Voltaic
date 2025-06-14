@@ -1,58 +1,36 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Force specific configuration for port 3000 stability
-    reactStrictMode: false, // Disable strict mode to prevent double rendering issues
+    reactStrictMode: true,
 
-    // Disable SWC minification completely
-    swcMinify: false,
-
-    // Aggressive webpack configuration for port 3000
+    // Enhanced chunk loading configuration for better reliability
     webpack: (config, { dev, isServer }) => {
-        if (dev) {
-            // Completely disable all caching
-            config.cache = false;
-
-            // Force specific module resolution
-            config.resolve.fallback = {
-                ...config.resolve.fallback,
-                fs: false,
-                net: false,
-                tls: false,
-            };
-
-            // Disable hot reloading optimizations that might cause issues
+        // Only apply optimizations in production
+        if (!dev && !isServer) {
             config.optimization = {
                 ...config.optimization,
-                removeAvailableModules: false,
-                removeEmptyChunks: false,
-                splitChunks: false, // Disable chunk splitting completely
+                splitChunks: {
+                    chunks: 'all',
+                    cacheGroups: {
+                        vendor: {
+                            test: /[\\/]node_modules[\\/]/,
+                            name: 'vendors',
+                            chunks: 'all',
+                        },
+                    },
+                },
             };
         }
 
         return config;
     },
 
-    // Remove all experimental features
-    experimental: {},
-
-    // Disable all development indicators
-    devIndicators: {
-        buildActivity: false,
-    },
-
-    // Force specific server configuration
-    serverRuntimeConfig: {},
-    publicRuntimeConfig: {},
-
-    // Disable source maps completely
+    // Disable source maps in production for smaller bundles
     productionBrowserSourceMaps: false,
 
-    // Force specific asset configuration
-    assetPrefix: '',
-
-    // Disable image optimization that might interfere
+    // Image optimization
     images: {
-        unoptimized: true,
+        domains: [],
+        unoptimized: false,
     },
 };
 

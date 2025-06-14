@@ -1,7 +1,7 @@
 // Test configuration for agent outputs
 // Set USE_TEST_DATA to true to use hardcoded responses instead of API calls
 export const TEST_CONFIG = {
-    USE_TEST_DATA: true, // Set to false to use real API calls
+    USE_TEST_DATA: false, // Set to false to use real API calls
 
     // Hardcoded agent outputs for testing
     AGENT_OUTPUTS: {
