@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Loader2, CheckCircle, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle, Sparkles, XCircle } from 'lucide-react';
 import { GenerationStep, Message } from './types';
 
 interface GenerationStepsProps {
@@ -51,19 +51,23 @@ export function GenerationSteps({
                                     }}
                                 >
                                     <div className={`w-4 h-4 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0 ${step.status === 'completed' ? 'bg-green-500 scale-110' :
-                                            step.status === 'generating' ? 'bg-blue-400 scale-110' : 'bg-white/20'
+                                        step.status === 'generating' ? 'bg-blue-400 scale-110' :
+                                            step.status === 'error' ? 'bg-red-500 scale-110' : 'bg-white/20'
                                         }`}>
                                         {step.status === 'completed' ? (
                                             <CheckCircle className="w-3 h-3 text-white" />
                                         ) : step.status === 'generating' ? (
                                             <Loader2 className="w-3 h-3 text-white animate-spin" />
+                                        ) : step.status === 'error' ? (
+                                            <XCircle className="w-3 h-3 text-white" />
                                         ) : (
                                             <div className="w-2 h-2 bg-white/40 rounded-full"></div>
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className={`font-medium transition-colors duration-300 ${step.status === 'completed' ? 'text-green-400' :
-                                                step.status === 'generating' ? 'text-blue-400' : 'text-white/40'
+                                            step.status === 'generating' ? 'text-blue-400' :
+                                                step.status === 'error' ? 'text-red-400' : 'text-white/40'
                                             }`}>
                                             {step.name}
                                         </div>

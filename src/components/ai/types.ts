@@ -27,6 +27,6 @@ export interface AppProject {
 export interface GenerationStep {
     id: string;
     name: string;
-    status: 'pending' | 'generating' | 'completed';
+    status: 'pending' | 'generating' | 'completed' | 'error';
     description: string;
 } 

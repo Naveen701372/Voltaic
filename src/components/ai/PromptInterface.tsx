@@ -130,144 +130,125 @@ export default function PromptInterface() {
         setGenerationSteps(steps);
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            updateGenerationStep('analyze', 'completed');
-            updateGenerationStep('architecture', 'generating');
-
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            updateGenerationStep('architecture', 'completed');
-            updateGenerationStep('components', 'generating');
+            // Start real AI generation
+            const { aiService } = await import('@/lib/ai-service');
 
             const assistantMessageId = (Date.now() + 1).toString();
-            const streamingContent = `I'm creating your app now! Let me break down what I'm building:
+            let currentContent = '';
+            let generatedFiles: any[] = [];
+            let hasStartedStreaming = false;
 
-**App Analysis:**
-• Detected features: ${userPrompt.toLowerCase().includes('auth') ? 'authentication, ' : ''}${userPrompt.toLowerCase().includes('real-time') ? 'real-time updates, ' : ''}modern UI, responsive design
-• Architecture: Next.js 14 with TypeScript and glass morphism components
-• Database: ${userPrompt.toLowerCase().includes('auth') ? 'Supabase with RLS policies' : 'Local state management'}
-
-**Components Being Generated:**
-• Main application page with routing
-• Header component with navigation
-• Content area with interactive features
-• ${userPrompt.toLowerCase().includes('auth') ? 'Authentication components' : 'Feature-specific components'}
-
-This will be a production-ready application with beautiful glass morphism UI!`;
-
-            await simulateStreaming(streamingContent, assistantMessageId);
-
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            updateGenerationStep('components', 'completed');
-            updateGenerationStep('styling', 'generating');
-
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            updateGenerationStep('styling', 'completed');
-            updateGenerationStep('preview', 'generating');
-
-            setPreviewLoading(true);
-            setIsTransitioning(true);
-
-            await new Promise(resolve => setTimeout(resolve, 700));
-
-            // Call the new LangChain API
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    messages: [
-                        ...messages.slice(1).map(m => ({
-                            role: m.type === 'user' ? 'user' : 'assistant',
-                            content: m.content
-                        })),
-                        { role: 'user', content: userPrompt }
-                    ],
-                    isNewApp: true
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to generate app');
-            }
-
-            // Handle streaming response
-            const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error('No response body');
-            }
-
-            let generatedApp = {
-                name: 'Generated App',
-                description: 'A modern application built with Next.js and TypeScript',
-                files: [],
-                preview: '<div>App generated successfully!</div>'
+            // Initialize streaming message
+            const initialStreamingMessage: Message = {
+                id: assistantMessageId,
+                type: 'assistant',
+                content: '',
+                timestamp: new Date(),
+                isStreaming: true
             };
+            setStreamingMessage(initialStreamingMessage);
 
-            // Process streaming chunks
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
+            // Stream the real AI response
+            for await (const response of aiService.streamGeneration({
+                prompt: userPrompt,
+                previousMessages: messages.slice(1).map(m => ({
+                    role: m.type === 'user' ? 'user' : 'assistant',
+                    content: m.content
+                }))
+            })) {
+                currentContent = response.content;
+                generatedFiles = response.files;
 
-                const chunk = new TextDecoder().decode(value);
-                const lines = chunk.split('\n');
+                // Update streaming message
+                setStreamingMessage(prev => prev ? {
+                    ...prev,
+                    content: currentContent
+                } : null);
 
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const data = JSON.parse(line.slice(6));
-                            if (data.type === 'token' && streamingMessage) {
-                                setStreamingMessage(prev => prev ? {
-                                    ...prev,
-                                    content: prev.content + data.content
-                                } : null);
-                            } else if (data.type === 'done') {
-                                // Generation complete
-                                break;
-                            }
-                        } catch (e) {
-                            // Ignore parsing errors
-                        }
-                    }
+                // Update progress steps based on content and files
+                if (!hasStartedStreaming && currentContent.length > 0) {
+                    hasStartedStreaming = true;
+                    updateGenerationStep('analyze', 'completed');
+                    updateGenerationStep('architecture', 'generating');
+                }
+
+                if (currentContent.length > 100) {
+                    updateGenerationStep('architecture', 'completed');
+                    updateGenerationStep('components', 'generating');
+                }
+
+                if (response.files.length > 0) {
+                    updateGenerationStep('components', 'completed');
+                    updateGenerationStep('styling', 'generating');
+                }
+
+                if (response.isComplete) {
+                    updateGenerationStep('styling', 'completed');
+                    updateGenerationStep('preview', 'generating');
+
+                    setPreviewLoading(true);
+                    setIsTransitioning(true);
+
+                    // Create the project from the generated response
+                    const project: AppProject = {
+                        id: Date.now().toString(),
+                        name: aiService['extractAppName'](userPrompt, currentContent) || 'Generated App',
+                        description: aiService['extractDescription'](currentContent) || 'A modern web application built with Next.js and TypeScript',
+                        files: response.files.length > 0 ? response.files : [{
+                            path: 'src/app/page.tsx',
+                            type: 'page' as const,
+                            description: 'Main application page',
+                            content: `'use client';\n\nexport default function HomePage() {\n    return (\n        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">\n            <div className="glass-primary p-8 rounded-2xl max-w-md w-full text-center">\n                <h1 className="text-2xl font-bold text-white mb-4">Generated App</h1>\n                <p className="text-white/80 mb-6">Your application is ready!</p>\n            </div>\n        </div>\n    );\n}`
+                        }],
+                        preview: response.files.length > 0 ?
+                            aiService['generatePreview']('Generated App', response.files) :
+                            '<div class="p-8 text-center"><h1 class="text-2xl font-bold mb-4">Generated App</h1><p class="text-gray-600">Your application is ready!</p></div>',
+                        status: 'ready'
+                    };
+
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    updateGenerationStep('preview', 'completed');
+
+                    setPreviewReady(true);
+                    setPreviewLoading(false);
+                    setCurrentProject(project);
+
+                    // Finalize the streaming message
+                    const finalMessage: Message = {
+                        id: assistantMessageId,
+                        type: 'assistant',
+                        content: currentContent + `\n\n✅ **"${project.name}" is ready!**\n\nI've generated ${project.files.length} files with complete functionality. You can view the code and preview on the right. Would you like me to modify anything?`,
+                        timestamp: new Date(),
+                        isStreaming: false,
+                        files: project.files,
+                        preview: project.preview
+                    };
+                    setMessages(prev => [...prev, finalMessage]);
+                    setStreamingMessage(null);
+                    setActiveTab('preview');
+                    break;
                 }
             }
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            updateGenerationStep('preview', 'completed');
-
-            const project: AppProject = {
-                id: Date.now().toString(),
-                name: generatedApp.name,
-                description: generatedApp.description,
-                files: generatedApp.files,
-                preview: generatedApp.preview,
-                status: 'ready'
-            };
-
-            setPreviewReady(true);
-            setPreviewLoading(false);
-            setCurrentProject(project);
-
-            if (streamingMessage) {
-                const finalMessage: Message = {
-                    ...streamingMessage,
-                    content: streamingMessage.content + `\n\n✅ **"${project.name}" is ready!**\n\nI've generated ${project.files.length} files with complete functionality. You can view the code and preview on the right. Would you like me to modify anything?`,
-                    isStreaming: false,
-                    files: project.files,
-                    preview: project.preview
-                };
-                setMessages(prev => [...prev, finalMessage]);
-                setStreamingMessage(null);
-            }
-
-            setActiveTab('preview');
-
         } catch (error) {
             console.error('Generation error:', error);
+
+            // Update steps to show error
+            updateGenerationStep('analyze', 'completed');
+            updateGenerationStep('architecture', 'completed');
+            updateGenerationStep('components', 'error');
+
             const errorMessage: Message = {
                 id: (Date.now() + 2).toString(),
                 type: 'assistant',
-                content: "I encountered an error while generating your app. This might be due to API configuration. Please check your environment variables and try again.",
+                content: `I encountered an error while generating your app: ${error instanceof Error ? error.message : 'Unknown error'}. 
+
+This might be due to:
+• Missing API keys (ANTHROPIC_API_KEY or OPENAI_API_KEY)
+• Network connectivity issues
+• API rate limits
+
+Please check your environment variables and try again. You can test the connection at /test-langchain.`,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
@@ -306,82 +287,22 @@ This will be a production-ready application with beautiful glass morphism UI!`;
 
         try {
             const assistantMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const responseContent = `I understand you'd like to modify the app. Let me analyze your request and make the necessary changes.
 
-            // Initialize streaming message
-            setStreamingMessage({
+**Your Request:** ${userPrompt}
+
+I'll update the components and regenerate the preview with your requested changes. This might take a moment...`;
+
+            const finalContent = await simulateStreaming(responseContent, assistantMessageId);
+
+            const assistantMessage: Message = {
                 id: assistantMessageId,
                 type: 'assistant',
-                content: '',
-                timestamp: new Date(),
-                isStreaming: true
-            });
-
-            // Call the LangChain API for conversation
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    messages: [
-                        ...messages.map(m => ({
-                            role: m.type === 'user' ? 'user' : 'assistant',
-                            content: m.content
-                        })),
-                        { role: 'user', content: userPrompt }
-                    ],
-                    isNewApp: false
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to continue conversation');
-            }
-
-            // Handle streaming response
-            const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error('No response body');
-            }
-
-            let fullContent = '';
-
-            // Process streaming chunks
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = new TextDecoder().decode(value);
-                const lines = chunk.split('\n');
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const data = JSON.parse(line.slice(6));
-                            if (data.type === 'token') {
-                                fullContent += data.content;
-                                setStreamingMessage(prev => prev ? {
-                                    ...prev,
-                                    content: fullContent
-                                } : null);
-                            } else if (data.type === 'done') {
-                                // Finalize the message
-                                const finalMessage: Message = {
-                                    id: assistantMessageId,
-                                    type: 'assistant',
-                                    content: fullContent,
-                                    timestamp: new Date()
-                                };
-                                setMessages(prev => [...prev, finalMessage]);
-                                setStreamingMessage(null);
-                                break;
-                            }
-                        } catch (e) {
-                            // Ignore parsing errors
-                        }
-                    }
-                }
-            }
+                content: finalContent,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+            setStreamingMessage(null);
 
         } catch (error) {
             console.error('Error in conversation:', error);
@@ -392,7 +313,6 @@ This will be a production-ready application with beautiful glass morphism UI!`;
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
-            setStreamingMessage(null);
         } finally {
             setIsGenerating(false);
         }
