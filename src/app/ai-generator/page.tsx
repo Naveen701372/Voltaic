@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { StreamingPromptInterface } from '@/components/ai/StreamingPromptInterface';
+import PromptInterface from '@/components/ai/PromptInterface';
 
 export default function AIGeneratorPage() {
-    return <StreamingPromptInterface />;
+    return <PromptInterface />
 } 

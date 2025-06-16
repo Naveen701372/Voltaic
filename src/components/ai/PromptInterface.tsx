@@ -1,226 +1,368 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Send, Zap, Loader2, AlertCircle, Sparkles } from 'lucide-react';
-import { useAgentStore } from '@/lib/stores/agentStore';
-import { logger } from '@/lib/utils/logger';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { WelcomeScreen } from './WelcomeScreen';
+import { GenerationSteps } from './GenerationSteps';
+import { ChatPanel } from './ChatPanel';
+import { PreviewPanel } from './PreviewPanel';
+import { FloatingInput } from './FloatingInput';
+import { Message, GeneratedFile, AppProject, GenerationStep } from './types';
+import { injectStyles } from './styles';
 
-export const PromptInterface: React.FC = () => {
+export default function PromptInterface() {
+    const [messages, setMessages] = useState<Message[]>([
+        {
+            id: '1',
+            type: 'system',
+            content: "Hi! I'm Voltaic, your AI app generator. Describe any app idea and I'll build it for you with beautiful glass morphism UI. What would you like to create today?",
+            timestamp: new Date()
+        }
+    ]);
     const [prompt, setPrompt] = useState('');
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [currentProject, setCurrentProject] = useState<AppProject | null>(null);
+    const [activeTab, setActiveTab] = useState<'chat' | 'code' | 'preview'>('preview');
+    const [generationSteps, setGenerationSteps] = useState<GenerationStep[]>([]);
+    const [streamingMessage, setStreamingMessage] = useState<Message | null>(null);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(true);
+    const [showGenerationSteps, setShowGenerationSteps] = useState(false);
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const [previewReady, setPreviewReady] = useState(false);
+    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Agent store selectors
-    const isGenerating = useAgentStore((state) => state.isGenerating);
-    const progress = useAgentStore((state) => state.progress);
-    const currentStep = useAgentStore((state) => state.currentStep);
-    const error = useAgentStore((state) => state.error);
+    // Inject styles on component mount
+    useEffect(() => {
+        injectStyles();
+    }, []);
 
-    // Agent store actions
-    const generateMVP = useAgentStore((state) => state.generateMVP);
-    const setError = useAgentStore((state) => state.setError);
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, streamingMessage, previewLoading]);
+
+    const handleSuggestionClick = (suggestion: string) => {
+        setPrompt(suggestion);
+        if (textareaRef.current) {
+            textareaRef.current.focus();
+        }
+    };
+
+    const copyToClipboard = async (text: string, messageId: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedMessageId(messageId);
+            setTimeout(() => setCopiedMessageId(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                setCopiedMessageId(messageId);
+                setTimeout(() => setCopiedMessageId(null), 2000);
+            } catch (fallbackErr) {
+                console.error('Fallback copy failed: ', fallbackErr);
+            }
+            document.body.removeChild(textArea);
+        }
+    };
+
+    const simulateStreaming = async (content: string, messageId: string) => {
+        const words = content.split(' ');
+        let currentContent = '';
+
+        for (let i = 0; i < words.length; i++) {
+            currentContent += (i > 0 ? ' ' : '') + words[i];
+
+            setStreamingMessage({
+                id: messageId,
+                type: 'assistant',
+                content: currentContent,
+                timestamp: new Date(),
+                isStreaming: true
+            });
+
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 100 + 50));
+        }
+
+        return currentContent;
+    };
+
+    const updateGenerationStep = (stepId: string, status: GenerationStep['status']) => {
+        setGenerationSteps(prev => prev.map(step =>
+            step.id === stepId ? { ...step, status } : step
+        ));
+    };
+
+    const generateApp = async (userPrompt: string) => {
+        setIsGenerating(true);
+        setShowSuggestions(false);
+
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        setShowGenerationSteps(true);
+        setPreviewReady(false);
+        setPreviewLoading(false);
+
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            type: 'user',
+            content: userPrompt,
+            timestamp: new Date()
+        };
+        setMessages(prev => [...prev, userMessage]);
+
+        const steps: GenerationStep[] = [
+            { id: 'analyze', name: 'Analyzing Requirements', status: 'generating', description: 'Understanding your app requirements and features' },
+            { id: 'architecture', name: 'Planning Architecture', status: 'pending', description: 'Designing the app structure and components' },
+            { id: 'components', name: 'Generating Components', status: 'pending', description: 'Creating React components with TypeScript' },
+            { id: 'styling', name: 'Applying Glass Morphism', status: 'pending', description: 'Adding beautiful glass morphism styling' },
+            { id: 'preview', name: 'Building Preview', status: 'pending', description: 'Generating live preview of your app' }
+        ];
+        setGenerationSteps(steps);
+
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            updateGenerationStep('analyze', 'completed');
+            updateGenerationStep('architecture', 'generating');
+
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            updateGenerationStep('architecture', 'completed');
+            updateGenerationStep('components', 'generating');
+
+            const assistantMessageId = (Date.now() + 1).toString();
+            const streamingContent = `I'm creating your app now! Let me break down what I'm building:
+
+**App Analysis:**
+• Detected features: ${userPrompt.toLowerCase().includes('auth') ? 'authentication, ' : ''}${userPrompt.toLowerCase().includes('real-time') ? 'real-time updates, ' : ''}modern UI, responsive design
+• Architecture: Next.js 14 with TypeScript and glass morphism components
+• Database: ${userPrompt.toLowerCase().includes('auth') ? 'Supabase with RLS policies' : 'Local state management'}
+
+**Components Being Generated:**
+• Main application page with routing
+• Header component with navigation
+• Content area with interactive features
+• ${userPrompt.toLowerCase().includes('auth') ? 'Authentication components' : 'Feature-specific components'}
+
+This will be a production-ready application with beautiful glass morphism UI!`;
+
+            await simulateStreaming(streamingContent, assistantMessageId);
+
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            updateGenerationStep('components', 'completed');
+            updateGenerationStep('styling', 'generating');
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            updateGenerationStep('styling', 'completed');
+            updateGenerationStep('preview', 'generating');
+
+            setPreviewLoading(true);
+            setIsTransitioning(true);
+
+            await new Promise(resolve => setTimeout(resolve, 700));
+
+            const { aiService } = await import('@/lib/ai-service');
+            const generatedApp = await aiService.generateApp({
+                prompt: userPrompt,
+                previousMessages: messages.slice(1).map(m => ({
+                    role: m.type === 'user' ? 'user' : 'assistant',
+                    content: m.content
+                }))
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            updateGenerationStep('preview', 'completed');
+
+            const project: AppProject = {
+                id: Date.now().toString(),
+                name: generatedApp.name,
+                description: generatedApp.description,
+                files: generatedApp.files,
+                preview: generatedApp.preview,
+                status: 'ready'
+            };
+
+            setPreviewReady(true);
+            setPreviewLoading(false);
+            setCurrentProject(project);
+
+            if (streamingMessage) {
+                const finalMessage: Message = {
+                    ...streamingMessage,
+                    content: streamingMessage.content + `\n\n✅ **"${project.name}" is ready!**\n\nI've generated ${project.files.length} files with complete functionality. You can view the code and preview on the right. Would you like me to modify anything?`,
+                    isStreaming: false,
+                    files: project.files,
+                    preview: project.preview
+                };
+                setMessages(prev => [...prev, finalMessage]);
+                setStreamingMessage(null);
+            }
+
+            setActiveTab('preview');
+
+        } catch (error) {
+            console.error('Generation error:', error);
+            const errorMessage: Message = {
+                id: (Date.now() + 2).toString(),
+                type: 'assistant',
+                content: "I encountered an error while generating your app. This might be due to API configuration. Please check your environment variables and try again.",
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            setStreamingMessage(null);
+            setShowSuggestions(true);
+            setShowGenerationSteps(false);
+            setPreviewLoading(false);
+        } finally {
+            setIsGenerating(false);
+            setIsTransitioning(false);
+            setGenerationSteps([]);
+            setShowGenerationSteps(false);
+        }
+    };
+
+    const continueConversation = async (userPrompt: string) => {
+        setIsGenerating(true);
+
+        if (streamingMessage) {
+            const finalizedMessage: Message = {
+                ...streamingMessage,
+                isStreaming: false
+            };
+            setMessages(prev => [...prev, finalizedMessage]);
+        }
+
+        setStreamingMessage(null);
+
+        const userMessage: Message = {
+            id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: 'user',
+            content: userPrompt,
+            timestamp: new Date()
+        };
+        setMessages(prev => [...prev, userMessage]);
+
+        try {
+            const assistantMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const responseContent = `I understand you'd like to modify the app. Let me analyze your request and make the necessary changes.
+
+**Your Request:** ${userPrompt}
+
+I'll update the components and regenerate the preview with your requested changes. This might take a moment...`;
+
+            const finalContent = await simulateStreaming(responseContent, assistantMessageId);
+
+            const assistantMessage: Message = {
+                id: assistantMessageId,
+                type: 'assistant',
+                content: finalContent,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+            setStreamingMessage(null);
+
+        } catch (error) {
+            console.error('Error in conversation:', error);
+            const errorMessage: Message = {
+                id: (Date.now() + 2).toString(),
+                type: 'assistant',
+                content: "I apologize, but I encountered an error processing your request. Please try again.",
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        logger.info('PromptInterface', `Form submitted with prompt: ${prompt.trim()}`);
+        if (!prompt.trim() || isGenerating) return;
 
-        if (!prompt.trim() || isGenerating) {
-            logger.warn('PromptInterface', 'Submission blocked - empty prompt or already generating');
-            return;
-        }
+        const userPrompt = prompt;
+        setPrompt('');
 
-        try {
-            logger.info('PromptInterface', 'Calling generateMVP...');
-            await generateMVP(prompt.trim());
-            logger.info('PromptInterface', 'MVP generation completed successfully');
-            setPrompt('');
-            setIsExpanded(false);
-        } catch (error) {
-            logger.error('PromptInterface', 'Failed to generate MVP', error);
+        if (currentProject) {
+            await continueConversation(userPrompt);
+        } else {
+            await generateApp(userPrompt);
         }
     };
 
-    const handleInputFocus = () => {
-        setIsExpanded(true);
-    };
+    // Centered layout when no project exists
+    if (!currentProject) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex relative overflow-hidden">
+                <div className="flex-1 flex flex-col pb-20 relative">
+                    <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-900/20 to-transparent backdrop-blur-sm pointer-events-none z-10"></div>
 
-    const handleInputBlur = () => {
-        if (!prompt.trim()) {
-            setIsExpanded(false);
-        }
-    };
+                    <WelcomeScreen
+                        showSuggestions={showSuggestions}
+                        onSuggestionClick={handleSuggestionClick}
+                    />
 
-    const clearError = () => {
-        setError(null);
-    };
-
-    const examplePrompts = [
-        "A task management app with team collaboration features",
-        "An e-commerce platform for handmade crafts",
-        "A fitness tracking app with social features",
-        "A recipe sharing platform with meal planning"
-    ];
-
-    return (
-        <div className="w-full max-w-4xl mx-auto p-6">
-            {/* Main Prompt Interface */}
-            <div className={`
-        relative transition-all duration-500 ease-out
-        ${isExpanded ? 'transform scale-105' : ''}
-      `}>
-                {/* Glass Container */}
-                <div className="
-          relative backdrop-blur-xl bg-white/10 
-          border border-white/20 rounded-2xl
-          shadow-2xl shadow-purple-500/10
-          overflow-hidden
-        ">
-                    {/* Gradient Background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-blue-500/5 to-cyan-500/5" />
-
-                    {/* Content */}
-                    <div className="relative p-8">
-                        {/* Header */}
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600">
-                                <Zap className="w-6 h-6 text-white" />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                                    AI MVP Generator
-                                </h2>
-                                <p className="text-gray-600 dark:text-gray-300">
-                                    Describe your app idea and watch it come to life
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Error Display */}
-                        {error && (
-                            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3">
-                                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1">
-                                    <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-                                    <button
-                                        onClick={clearError}
-                                        className="text-red-500 hover:text-red-600 text-xs mt-1 underline"
-                                    >
-                                        Dismiss
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Progress Display */}
-                        {isGenerating && (
-                            <div className="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                                    <span className="text-blue-600 dark:text-blue-400 font-medium">
-                                        {currentStep || 'Generating your MVP...'}
-                                    </span>
-                                </div>
-                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                    <div
-                                        className="bg-gradient-to-r from-purple-500 to-blue-600 h-2 rounded-full transition-all duration-300"
-                                        style={{ width: `${progress}%` }}
-                                    />
-                                </div>
-                                <div className="text-right text-sm text-gray-500 mt-1">
-                                    {progress}%
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Prompt Form */}
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="relative">
-                                <textarea
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    onFocus={handleInputFocus}
-                                    onBlur={handleInputBlur}
-                                    placeholder="Describe your app idea in detail..."
-                                    disabled={isGenerating}
-                                    className={`
-                    w-full resize-none rounded-xl border border-white/20
-                    bg-white/5 backdrop-blur-sm
-                    px-4 py-3 text-gray-900 dark:text-white
-                    placeholder-gray-500 dark:placeholder-gray-400
-                    focus:outline-none focus:ring-2 focus:ring-purple-500/50
-                    focus:border-purple-500/50
-                    transition-all duration-300
-                    ${isExpanded ? 'min-h-[120px]' : 'min-h-[60px]'}
-                    ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}
-                  `}
-                                />
-
-                                {/* Character Count */}
-                                <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-                                    {prompt.length}/1000
-                                </div>
-                            </div>
-
-                            {/* Submit Button */}
-                            <div className="flex justify-end">
-                                <button
-                                    type="submit"
-                                    disabled={!prompt.trim() || isGenerating}
-                                    className={`
-                    flex items-center gap-2 px-6 py-3 rounded-xl
-                    bg-gradient-to-r from-purple-600 to-blue-600
-                    text-white font-medium
-                    hover:from-purple-700 hover:to-blue-700
-                    focus:outline-none focus:ring-2 focus:ring-purple-500/50
-                    transition-all duration-300
-                    ${(!prompt.trim() || isGenerating)
-                                            ? 'opacity-50 cursor-not-allowed'
-                                            : 'hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25'
-                                        }
-                  `}
-                                >
-                                    {isGenerating ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Send className="w-4 h-4" />
-                                    )}
-                                    {isGenerating ? 'Generating...' : 'Generate MVP'}
-                                </button>
-                            </div>
-                        </form>
-
-                        {/* Example Prompts */}
-                        {!isGenerating && !isExpanded && (
-                            <div className="mt-6">
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                                    Try these examples:
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {examplePrompts.map((example, index) => (
-                                        <button
-                                            key={index}
-                                            onClick={() => setPrompt(example)}
-                                            className="
-                        text-left p-3 rounded-lg
-                        bg-white/5 hover:bg-white/10
-                        border border-white/10 hover:border-white/20
-                        text-sm text-gray-600 dark:text-gray-300
-                        transition-all duration-200
-                        hover:scale-[1.02]
-                      "
-                                        >
-                                            {example}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    {showGenerationSteps && isGenerating && (
+                        <GenerationSteps
+                            generationSteps={generationSteps}
+                            streamingMessage={streamingMessage}
+                            showGenerationSteps={showGenerationSteps}
+                            previewLoading={previewLoading}
+                        />
+                    )}
                 </div>
 
-                {/* Floating Elements */}
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-60 animate-pulse" />
-                <div className="absolute -bottom-4 -left-4 w-6 h-6 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full opacity-40 animate-pulse delay-1000" />
+                <FloatingInput
+                    prompt={prompt}
+                    setPrompt={setPrompt}
+                    onSubmit={handleSubmit}
+                    isGenerating={isGenerating}
+                    isBottom={true}
+                    currentProject={currentProject}
+                />
             </div>
+        );
+    }
+
+    // Split layout when preview is loading or ready
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex transition-all duration-700 ease-in-out">
+            <ChatPanel
+                messages={messages}
+                streamingMessage={streamingMessage}
+                copiedMessageId={copiedMessageId}
+                onCopy={copyToClipboard}
+                previewLoading={previewLoading}
+                showGenerationSteps={showGenerationSteps}
+                generationSteps={generationSteps}
+                isGenerating={isGenerating}
+                currentProject={currentProject}
+                messagesEndRef={messagesEndRef}
+            />
+
+            <PreviewPanel
+                previewLoading={previewLoading}
+                previewReady={previewReady}
+                currentProject={currentProject}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+            />
+
+            <FloatingInput
+                prompt={prompt}
+                setPrompt={setPrompt}
+                onSubmit={handleSubmit}
+                isGenerating={isGenerating}
+                placeholder="Ask me to modify the app or create something new..."
+                currentProject={currentProject}
+            />
         </div>
     );
-}; 
+} 
