@@ -52,11 +52,15 @@ const config: Config = {
 				"3xl": "32px",
 			},
 			animation: {
-				"fade-in": "fadeIn 0.6s ease-out",
-				"slide-up": "slideUp 0.6s ease-out",
-				"slide-down": "slideDown 0.3s ease-out",
-				"scale-in": "scaleIn 0.2s ease-out",
-				"glass-shimmer": "glassShimmer 3s ease-in-out infinite",
+				fadeIn: "fadeIn 0.5s ease-in-out",
+				slideUp: "slideUp 0.5s ease-out",
+				slideDown: "slideDown 0.5s ease-out",
+				scaleIn: "scaleIn 0.5s ease-out",
+				glassShimmer: "glassShimmer 3s ease-in-out infinite",
+				"gradient-pulse": "gradientPulse 3s ease-in-out infinite",
+				"logo-fade-in-up": "logoFadeInUp 1s ease-out forwards",
+				"suggestion-slide-up": "suggestionSlideUp 0.6s ease-out forwards",
+				"suggestion-fade-down": "suggestionFadeDown 0.4s ease-in forwards",
 			},
 			animationDelay: {
 				'200': '200ms',
@@ -85,6 +89,58 @@ const config: Config = {
 				glassShimmer: {
 					"0%, 100%": { backgroundPosition: "200% center" },
 					"50%": { backgroundPosition: "-200% center" },
+				},
+				gradientPulse: {
+					"0%": {
+						backgroundPosition: "0% 50%",
+						transform: "scale(1)"
+					},
+					"25%": {
+						backgroundPosition: "100% 50%",
+						transform: "scale(1.05)"
+					},
+					"50%": {
+						backgroundPosition: "100% 50%",
+						transform: "scale(1.1)"
+					},
+					"75%": {
+						backgroundPosition: "0% 50%",
+						transform: "scale(1.05)"
+					},
+					"100%": {
+						backgroundPosition: "0% 50%",
+						transform: "scale(1)"
+					},
+				},
+				logoFadeInUp: {
+					"0%": {
+						opacity: "0",
+						transform: "translateY(40px) scale(0.8)"
+					},
+					"100%": {
+						opacity: "1",
+						transform: "translateY(0) scale(1)"
+					},
+				},
+				suggestionSlideUp: {
+					"0%": {
+						opacity: "0",
+						transform: "translateY(30px) scale(0.95)"
+					},
+					"100%": {
+						opacity: "1",
+						transform: "translateY(0) scale(1)"
+					},
+				},
+				suggestionFadeDown: {
+					"0%": {
+						opacity: "1",
+						transform: "translateY(0) scale(1)"
+					},
+					"100%": {
+						opacity: "0",
+						transform: "translateY(30px) scale(0.95)"
+					},
 				},
 			},
 			borderRadius: {

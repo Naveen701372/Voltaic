@@ -1,16 +1,22 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Zap, LogOut } from 'lucide-react';
 import { WelcomeScreen } from './WelcomeScreen';
 import { GenerationSteps } from './GenerationSteps';
 import { ChatPanel } from './ChatPanel';
-import { PreviewPanel } from './PreviewPanel';
+import { EnhancedPreviewPanel } from './EnhancedPreviewPanel';
 import { FloatingInput } from './FloatingInput';
-import { Message, GeneratedFile, AppProject, GenerationStep } from './types';
+import { WorkflowVisualization } from './WorkflowVisualization';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { Message, GeneratedFile, AppProject, GenerationStep, AgentWorkflow } from './types';
 import { injectStyles } from './styles';
 
 export default function PromptInterface() {
+    const { user, signOut } = useAuth();
+    const router = useRouter();
+
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
@@ -26,26 +32,28 @@ export default function PromptInterface() {
     const [generationSteps, setGenerationSteps] = useState<GenerationStep[]>([]);
     const [streamingMessage, setStreamingMessage] = useState<Message | null>(null);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const [showSuggestions, setShowSuggestions] = useState(true);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [showGenerationSteps, setShowGenerationSteps] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
     const [previewReady, setPreviewReady] = useState(true);
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+    const [currentWorkflow, setCurrentWorkflow] = useState<AgentWorkflow | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Inject styles on component mount
     useEffect(() => {
         injectStyles();
+
+        // Trigger page load animations
+        const timer = setTimeout(() => {
+            setShowSuggestions(true);
+        }, 300); // Small delay for page load
+
+        return () => clearTimeout(timer);
     }, []);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, streamingMessage, previewLoading]);
+    // Autoscroll is now handled internally by ChatPanel with intelligent intersection detection
 
     const handleSuggestionClick = (suggestion: string) => {
         setPrompt(suggestion);
@@ -236,6 +244,9 @@ Please check your environment variables and try again. You can test the connecti
     const continueConversation = async (userPrompt: string) => {
         setIsGenerating(true);
 
+        // Immediately hide suggestions with animation
+        setShowSuggestions(false);
+
         if (streamingMessage) {
             const finalizedMessage: Message = {
                 ...streamingMessage,
@@ -264,31 +275,68 @@ Please check your environment variables and try again. You can test the connecti
                 const multiAgentService = new MultiAgentService();
 
                 // Process workflow with multiple agents
-                for await (const { workflow, isComplete } of multiAgentService.processWorkflow(userPrompt)) {
-                    // Update or add agent messages
-                    setMessages(prev => {
-                        const newMessages = [...prev];
+                for await (const { workflow, isComplete, enthusiasmMessage, agentReveal } of multiAgentService.processWorkflow(userPrompt)) {
+                    // Update workflow state for visualization
+                    setCurrentWorkflow(workflow);
 
-                        // Remove existing agent messages for this workflow
-                        const filteredMessages = newMessages.filter(m =>
-                            !(m.type === 'agent' && m.id.startsWith(workflow.id))
-                        );
+                    // Handle enthusiasm message - add or update in chat
+                    if (enthusiasmMessage) {
+                        if (enthusiasmMessage.isStreaming) {
+                            // Update streaming message
+                            setStreamingMessage(enthusiasmMessage);
+                        } else {
+                            // Finalize streaming message and add to messages only ONCE
+                            const messageExists = messages.some(msg => msg.id === enthusiasmMessage.id);
 
-                        // Add current agent messages
-                        const agentMessages: Message[] = workflow.agents.map(agent => ({
-                            id: `${workflow.id}_${agent.id}`,
-                            type: 'agent' as const,
-                            content: agent.output || '',
-                            timestamp: agent.timestamp,
-                            agentType: agent.type,
-                            agentStatus: agent.status,
-                            files: agent.files
-                        }));
+                            console.log(`🔍 Enthusiasm message finalization:`, {
+                                messageId: enthusiasmMessage.id,
+                                messageExists,
+                                hasStreamingMessage: !!streamingMessage,
+                                streamingMessageId: streamingMessage?.id,
+                                workflowComplete: isComplete
+                            });
 
-                        return [...filteredMessages, ...agentMessages];
-                    });
+                            // Only add if:
+                            // 1. There was a streaming message with matching ID
+                            // 2. The message is not already in messages
+                            // 3. This is the first time we're finalizing (not a workflow completion re-yield)
+                            if (streamingMessage &&
+                                streamingMessage.id === enthusiasmMessage.id &&
+                                !messageExists &&
+                                !isComplete) {  // Don't add during workflow completion
+                                console.log(`✅ Adding enthusiasm message to chat`);
+                                setMessages(prev => [...prev, enthusiasmMessage]);
+                                setStreamingMessage(null);
+                            } else {
+                                // Always clear streaming state
+                                console.log(`⚠️ Clearing streaming state - message exists: ${messageExists}, workflow complete: ${isComplete}`);
+                                if (streamingMessage && streamingMessage.id === enthusiasmMessage.id) {
+                                    setStreamingMessage(null);
+                                }
+                            }
+                        }
+                    }
+
+                    // Handle agent reveal animations (handled by WorkflowVisualization)
+                    if (agentReveal) {
+                        // This will trigger animations in the WorkflowVisualization component
+                        // The component will handle the reveal animation based on agentReveal.agentIndex
+                    }
 
                     if (isComplete && workflow.finalResult) {
+                        // Add a completion message with workflow data preserved (deep clone to avoid reference issues)
+                        const completionMessage: Message = {
+                            id: `${workflow.id}_complete`,
+                            type: 'assistant',
+                            content: `🎉 **Your app is ready!** I've successfully created "${workflow.finalResult.title}" with all the features you requested. Check out the preview to see your new application in action!`,
+                            timestamp: new Date(),
+                            files: workflow.finalResult.files,
+                            metadata: {
+                                workflow: JSON.parse(JSON.stringify(workflow)) // Deep clone to preserve state at completion
+                            }
+                        };
+                        setMessages(prev => [...prev, completionMessage]);
+
                         // Create and set the project
                         const project: AppProject = {
                             id: workflow.id,
@@ -300,6 +348,9 @@ Please check your environment variables and try again. You can test the connecti
                         };
                         setCurrentProject(project);
                         setActiveTab('preview');
+
+                        // Clear current workflow since it's now preserved in the message metadata
+                        setCurrentWorkflow(null);
                     }
                 }
             } else {
@@ -400,48 +451,9 @@ Please check your environment variables and try again. You can test the connecti
 
     // Always show split layout
     return (
-        <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col overflow-hidden transition-all duration-700 ease-in-out">
-            {/* Fixed Header */}
-            <div className="flex-none w-full p-3 border-b border-white/10 bg-white/5 backdrop-blur-xl z-50">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                            <Sparkles className="w-3.5 h-3.5 text-white" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-sm font-bold text-white">Voltaic</h1>
-                            <span className="text-white/60 text-xs">AI App Generator</span>
-                        </div>
-                    </div>
-
-                    {/* Code/Preview Toggle - Only show when project exists */}
-                    {currentProject && (
-                        <div className="flex gap-1">
-                            <button
-                                onClick={() => setActiveTab('code')}
-                                className={`px-2 py-1 text-xs rounded-md transition-colors ${activeTab === 'code'
-                                    ? 'bg-white/15 text-white'
-                                    : 'text-white/60 hover:text-white hover:bg-white/10'
-                                    }`}
-                            >
-                                Code
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('preview')}
-                                className={`px-2 py-1 text-xs rounded-md transition-colors ${activeTab === 'preview'
-                                    ? 'bg-white/15 text-white'
-                                    : 'text-white/60 hover:text-white hover:bg-white/10'
-                                    }`}
-                            >
-                                Preview
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Main Content Area - Fixed Height */}
-            <div className="flex flex-1 min-h-0 relative">
+        <div className="h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex overflow-hidden transition-all duration-700 ease-in-out">
+            {/* Main Content Area - Full Height */}
+            <div className="flex flex-1 h-full relative overflow-hidden">
                 {/* Chat Panel Container - Fixed Width and Height */}
                 <div className="w-[28%] flex flex-col bg-white/2 rounded-br-2xl relative overflow-hidden">
                     <div className="flex-1 min-h-0">
@@ -455,6 +467,7 @@ Please check your environment variables and try again. You can test the connecti
                             generationSteps={generationSteps}
                             isGenerating={isGenerating}
                             currentProject={currentProject}
+                            currentWorkflow={currentWorkflow}
                             messagesEndRef={messagesEndRef}
                         />
                     </div>
@@ -477,16 +490,105 @@ Please check your environment variables and try again. You can test the connecti
                 </div>
 
                 {/* Preview Panel Container - Fixed Width and Height */}
-                <div className="w-[72%] flex flex-col min-h-0 overflow-hidden">
-                    <PreviewPanel
-                        previewLoading={previewLoading}
-                        previewReady={previewReady}
-                        currentProject={currentProject}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        showSuggestions={showSuggestions}
-                        onSuggestionClick={handleSuggestionClick}
-                    />
+                <div className="w-[72%] h-full absolute right-0 top-0 bottom-0 relative">
+                    {/* Compact Floating Header - positioned over preview area */}
+                    <div className="absolute top-0 left-0 right-0 z-50">
+                        <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 px-4 py-2">
+                            <div className="flex items-center justify-between">
+                                {/* Logo Section */}
+                                <button
+                                    onClick={() => router.push('/dashboard')}
+                                    className="flex items-center gap-2 hover:scale-105 transition-transform duration-200"
+                                >
+                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-500 ${!showSuggestions && !currentProject
+                                        ? 'animate-gradient-pulse bg-gradient-to-br from-purple-500 via-pink-500 to-blue-600 bg-[length:200%_200%]'
+                                        : 'bg-gradient-to-br from-blue-500 to-purple-600'
+                                        }`}>
+                                        <Zap className="w-4 h-4 text-white" />
+                                    </div>
+                                    <span className="text-sm font-bold text-white">Voltaic</span>
+                                </button>
+
+                                {/* User Info and Sign Out */}
+                                {user && (
+                                    <div className="flex items-center gap-2">
+                                        {/* User Avatar */}
+                                        <div className="flex items-center gap-2 px-2 py-1 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg">
+                                            {user.user_metadata?.avatar_url ? (
+                                                <img
+                                                    src={user.user_metadata.avatar_url}
+                                                    alt="Profile"
+                                                    className="w-4 h-4 rounded-full border border-white/20"
+                                                />
+                                            ) : (
+                                                <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs border border-white/20">
+                                                    {(user.user_metadata?.full_name || user.email || 'U')[0].toUpperCase()}
+                                                </div>
+                                            )}
+                                            <span className="text-xs text-gray-300 truncate max-w-[100px]">
+                                                {user.user_metadata?.full_name || user.email}
+                                            </span>
+                                        </div>
+
+                                        {/* Sign out button */}
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    await signOut();
+                                                    router.push('/');
+                                                } catch (error) {
+                                                    console.error('Error signing out:', error);
+                                                }
+                                            }}
+                                            className="p-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg hover:bg-red-500/20 hover:border-red-400/30 transition-colors duration-200"
+                                            title="Sign out"
+                                        >
+                                            <LogOut className="w-3 h-3 text-white" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Code/Preview Toggle - Only show when project exists */}
+                        {currentProject && (
+                            <div className="border-b border-white/10 bg-white/5 backdrop-blur-xl">
+                                <div className="px-4 py-2">
+                                    <div className="flex justify-center gap-1">
+                                        <button
+                                            onClick={() => setActiveTab('code')}
+                                            className={`px-6 py-2 text-sm rounded-lg transition-colors ${activeTab === 'code'
+                                                ? 'bg-white/15 text-white'
+                                                : 'text-white/60 hover:text-white hover:bg-white/10'
+                                                }`}
+                                        >
+                                            Code
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('preview')}
+                                            className={`px-6 py-2 text-sm rounded-lg transition-colors ${activeTab === 'preview'
+                                                ? 'bg-white/15 text-white'
+                                                : 'text-white/60 hover:text-white hover:bg-white/10'
+                                                }`}
+                                        >
+                                            Preview
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Preview Panel with minimal top padding for seamless alignment */}
+                    <div className="h-full pt-12">
+                        <EnhancedPreviewPanel
+                            currentProject={currentProject}
+                            activeTab={activeTab}
+                            setActiveTab={setActiveTab}
+                            showSuggestions={showSuggestions}
+                            onSuggestionClick={handleSuggestionClick}
+                        />
+                    </div>
                 </div>
             </div>
         </div>
