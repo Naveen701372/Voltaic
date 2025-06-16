@@ -8,7 +8,6 @@ interface FloatingInputProps {
     setPrompt: (value: string) => void;
     onSubmit: (e: React.FormEvent) => void;
     isGenerating: boolean;
-    isBottom?: boolean;
     placeholder?: string;
     currentProject?: any;
 }
@@ -18,7 +17,6 @@ export function FloatingInput({
     setPrompt,
     onSubmit,
     isGenerating,
-    isBottom = false,
     placeholder = "Describe your app idea in detail...",
     currentProject
 }: FloatingInputProps) {
@@ -32,10 +30,8 @@ export function FloatingInput({
     };
 
     return (
-        <div className={`fixed ${isBottom ? 'bottom-8' : 'bottom-6'} left-0 right-0 px-6 z-50 transition-all duration-700 ease-in-out ${currentProject && !isBottom ? 'transform translate-x-[-25%] scale-90' : ''
-            }`}>
-            <div className={`${isBottom ? 'max-w-2xl' : currentProject ? 'max-w-lg' : 'max-w-2xl'
-                } mx-auto transition-all duration-700 ease-in-out`}>
+        <div className="absolute bottom-0 left-0 right-0 px-6 pb-6 z-50 bg-gradient-to-t from-slate-900/80 via-slate-900/40 to-transparent backdrop-blur-sm">
+            <div className="max-w-2xl mx-auto">
                 <form onSubmit={onSubmit}>
                     <div className="relative">
                         <div className="relative backdrop-blur-xl bg-white/8 border border-white/20 rounded-2xl shadow-2xl shadow-purple-500/5 overflow-hidden hover:shadow-purple-500/10 transition-all duration-300 hover:bg-white/12 focus-within:bg-white/15 focus-within:border-white/30 focus-within:shadow-purple-500/20">

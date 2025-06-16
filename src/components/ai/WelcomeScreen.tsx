@@ -9,7 +9,7 @@ interface WelcomeScreenProps {
 }
 
 const SUGGESTIONS = [
-    "A todo app with user authentication and real-time sync",
+    "A beautiful landing page for a SaaS product",
     "A recipe sharing platform with ratings and comments",
     "A fitness tracker with workout plans and progress charts",
     "A project management tool with team collaboration",

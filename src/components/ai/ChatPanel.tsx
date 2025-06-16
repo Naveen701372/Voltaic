@@ -31,20 +31,7 @@ export function ChatPanel({
     messagesEndRef
 }: ChatPanelProps) {
     return (
-        <div className="w-1/2 flex flex-col border-r border-white/10 transform transition-all duration-700 ease-in-out max-h-screen overflow-hidden">
-            {/* Header */}
-            <div className="p-6 border-b border-white/10">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
-                        <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-white">Voltaic AI</h1>
-                        <p className="text-white/60 text-sm">App Generator</p>
-                    </div>
-                </div>
-            </div>
-
+        <div className="h-full flex flex-col transform transition-all duration-700 ease-in-out overflow-hidden">
             {/* Generation Steps in Left Panel (when preview loading) */}
             {previewLoading && showGenerationSteps && (
                 <div className={`p-6 border-b border-white/10 transition-all duration-700 ease-in-out ${previewLoading ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'
@@ -84,7 +71,7 @@ export function ChatPanel({
                 </div>
             )}
 
-            {/* Messages */}
+            {/* Messages - Scrollable Area */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4 pb-32">
                 {messages.map((message) => (
                     <ChatMessage
@@ -95,10 +82,9 @@ export function ChatPanel({
                     />
                 ))}
 
-                {/* Show streaming message in chat when in split layout */}
-                {streamingMessage && (previewLoading || currentProject) && (
-                    <div className={`flex justify-start transition-all duration-700 ease-in-out animate-fadeInUp ${previewLoading || currentProject ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'
-                        }`}>
+                {/* Show streaming message in chat */}
+                {streamingMessage && (
+                    <div className="flex justify-start transition-all duration-700 ease-in-out animate-fadeInUp">
                         <ChatMessage
                             message={streamingMessage}
                             copiedMessageId={copiedMessageId}

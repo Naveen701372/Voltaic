@@ -1,8 +1,8 @@
 // Custom CSS animations for AI components
 export const injectStyles = () => {
-    if (typeof document === 'undefined') return;
+  if (typeof document === 'undefined') return;
 
-    const styles = `
+  const styles = `
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -51,6 +51,10 @@ export const injectStyles = () => {
   animation: fadeInUp 0.8s ease-out forwards;
 }
 
+.animate-fadeOutUp {
+  animation: fadeOutUp 0.5s ease-in forwards;
+}
+
 .animate-slideInRight {
   animation: slideInRight 0.7s ease-out forwards;
 }
@@ -61,12 +65,12 @@ iframe.animate-fadeInUp {
 }
 `;
 
-    // Check if styles are already injected
-    const existingStyle = document.getElementById('voltaic-ai-styles');
-    if (existingStyle) return;
+  // Check if styles are already injected
+  const existingStyle = document.getElementById('voltaic-ai-styles');
+  if (existingStyle) return;
 
-    const styleSheet = document.createElement('style');
-    styleSheet.id = 'voltaic-ai-styles';
-    styleSheet.textContent = styles;
-    document.head.appendChild(styleSheet);
+  const styleSheet = document.createElement('style');
+  styleSheet.id = 'voltaic-ai-styles';
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
 }; 

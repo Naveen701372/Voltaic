@@ -27,26 +27,46 @@ const voltWriteTool = new DynamicStructuredTool({
     }
 });
 
-// Initialize AI models
-const getAIModel = () => {
+// Initialize AI models with provider selection
+const getAIModel = (forceProvider?: 'anthropic' | 'openai') => {
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
     console.log('API Keys available:', { anthropic: !!anthropicKey, openai: !!openaiKey });
 
-    if (anthropicKey) {
-        console.log('Using Anthropic Claude');
+    // Force specific provider if requested
+    if (forceProvider === 'anthropic' && anthropicKey) {
+        console.log('Using Anthropic Claude (forced)');
         return new ChatAnthropic({
             apiKey: anthropicKey,
             model: 'claude-3-5-sonnet-20241022',
             temperature: 0.1,
             streaming: true
         });
-    } else if (openaiKey) {
-        console.log('Using OpenAI GPT-4');
+    } else if (forceProvider === 'openai' && openaiKey) {
+        console.log('Using OpenAI GPT-4 (forced)');
         return new ChatOpenAI({
             apiKey: openaiKey,
             model: 'gpt-4-turbo-preview',
+            temperature: 0.1,
+            streaming: true
+        });
+    }
+
+    // Default behavior: prefer OpenAI for general tasks, fallback to Anthropic
+    if (openaiKey) {
+        console.log('Using OpenAI GPT-4 (default)');
+        return new ChatOpenAI({
+            apiKey: openaiKey,
+            model: 'gpt-4-turbo-preview',
+            temperature: 0.1,
+            streaming: true
+        });
+    } else if (anthropicKey) {
+        console.log('Using Anthropic Claude (fallback)');
+        return new ChatAnthropic({
+            apiKey: anthropicKey,
+            model: 'claude-3-5-sonnet-20241022',
             temperature: 0.1,
             streaming: true
         });
@@ -57,10 +77,61 @@ const getAIModel = () => {
 
 export async function POST(req: NextRequest) {
     try {
-        const { messages, sessionId = 'default' } = await req.json();
-        console.log('Chat API called with', messages.length, 'messages');
+        const body = await req.json();
+        console.log('Chat API called with body:', body);
 
-        const model = getAIModel();
+        // Handle both multi-agent and regular chat requests
+        if (body.message) {
+            // Multi-agent workflow
+            const { message } = body;
+            console.log('Starting multi-agent workflow for:', message);
+
+            // Import the multi-agent service
+            const { MultiAgentService } = await import('../../../lib/multi-agent-service');
+            const multiAgentService = new MultiAgentService();
+
+            // Stream the multi-agent workflow
+            const encoder = new TextEncoder();
+            const stream = new ReadableStream({
+                async start(controller) {
+                    try {
+                        for await (const { workflow, isComplete } of multiAgentService.processWorkflow(message)) {
+                            const data = JSON.stringify({
+                                type: 'workflow',
+                                workflow,
+                                isComplete
+                            });
+                            controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+                        }
+
+                        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                        controller.close();
+                    } catch (error) {
+                        console.error('Multi-agent workflow error:', error);
+                        const errorData = JSON.stringify({
+                            type: 'error',
+                            error: error instanceof Error ? error.message : 'Multi-agent workflow failed'
+                        });
+                        controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
+                        controller.close();
+                    }
+                }
+            });
+
+            return new Response(stream, {
+                headers: {
+                    'Content-Type': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive',
+                },
+            });
+        }
+
+        // Regular chat workflow
+        const { messages, sessionId = 'default', forceProvider } = body;
+        console.log('Regular chat with', messages?.length || 0, 'messages');
+
+        const model = getAIModel(forceProvider);
         const tools = [voltWriteTool]; // Only file writing for now
 
         // Convert messages to LangChain format

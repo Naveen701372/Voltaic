@@ -11,6 +11,8 @@ interface PreviewPanelProps {
     currentProject: AppProject | null;
     activeTab: 'chat' | 'code' | 'preview';
     setActiveTab: (tab: 'chat' | 'code' | 'preview') => void;
+    showSuggestions?: boolean;
+    onSuggestionClick?: (suggestion: string) => void;
 }
 
 export function PreviewPanel({
@@ -18,13 +20,61 @@ export function PreviewPanel({
     previewReady,
     currentProject,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    showSuggestions = false,
+    onSuggestionClick
 }: PreviewPanelProps) {
+    const suggestions = [
+        "A task management app with team collaboration",
+        "An e-commerce platform for handmade crafts",
+        "A fitness tracking app with social features",
+        "A recipe sharing platform with meal planning"
+    ];
+
     return (
-        <div className="w-1/2 flex flex-col transform transition-all duration-700 ease-in-out max-h-screen overflow-hidden animate-slideInRight">
+        <div className="w-full h-full flex flex-col transform transition-all duration-700 ease-in-out  pt-20 overflow-hidden animate-slideInRight">
+            {/* Suggestions State - When no project exists */}
+            {!currentProject && (
+                <div className={`h-full flex flex-col items-center pt-16 px-4 overflow-y-auto transition-all duration-1000 ease-out ${showSuggestions
+                    ? 'opacity-100 transform translate-y-0'
+                    : 'opacity-0 transform -translate-y-12'
+                    }`}>
+                    <div className="text-center mb-16">
+                        <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center mb-8 mx-auto">
+                            <Code className="w-7 h-7 text-white" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-2">What would you like to build?</h2>
+                        <p className="text-white/60 text-sm">Describe your app idea and watch our AI agents bring it to life</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 max-w-4xl w-full">
+                        {suggestions.map((suggestion, index) => (
+                            <div
+                                key={index}
+                                className={`transition-all duration-700 ease-out ${showSuggestions
+                                    ? 'opacity-100 transform translate-y-0'
+                                    : 'opacity-0 transform -translate-y-8'
+                                    }`}
+                                style={{
+                                    transitionDelay: showSuggestions ? `${index * 100}ms` : `${(suggestions.length - index - 1) * 100}ms`
+                                }}
+                            >
+                                <button
+                                    onClick={() => onSuggestionClick?.(suggestion)}
+                                    className="w-full px-8 py-4 text-center rounded-full bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 text-white transition-all duration-300 hover:scale-[1.02] group backdrop-blur-sm"
+                                    disabled={!showSuggestions}
+                                >
+                                    <span className="text-base group-hover:text-white/90 whitespace-nowrap">{suggestion}</span>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Preview Loading State */}
             {previewLoading && !previewReady && (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 animate-fadeInUp">
+                <div className="h-full flex flex-col items-center justify-center p-8 animate-fadeInUp overflow-y-auto">
                     <div className="text-center">
                         <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto animate-pulse">
                             <Loader2 className="w-8 h-8 text-white animate-spin" />
@@ -72,40 +122,8 @@ export function PreviewPanel({
 
             {/* Preview Ready State */}
             {previewReady && currentProject && (
-                <div className="flex-1 flex flex-col">
-                    {/* Header with App Info */}
-                    <div className="p-6 border-b border-white/10">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-xl font-bold text-white">{currentProject.name}</h2>
-                                <p className="text-white/60 text-sm">{currentProject.description}</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setActiveTab('code')}
-                                    className={`px-3 py-2 text-sm rounded-lg transition-colors ${activeTab === 'code'
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                                        }`}
-                                >
-                                    <Code className="w-4 h-4 inline mr-2" />
-                                    Code
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('preview')}
-                                    className={`px-3 py-2 text-sm rounded-lg transition-colors ${activeTab === 'preview'
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                                        }`}
-                                >
-                                    <Eye className="w-4 h-4 inline mr-2" />
-                                    Preview
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Content */}
+                <div className="h-full flex flex-col overflow-hidden">
+                    {/* Content - Scrollable */}
                     <div className="flex-1 overflow-hidden">
                         {activeTab === 'code' && (
                             <div className="h-full overflow-y-auto p-4 space-y-4">
@@ -129,34 +147,14 @@ export function PreviewPanel({
                         )}
 
                         {activeTab === 'preview' && (
-                            <div className="h-full flex flex-col">
-                                <div className="p-4 border-b border-white/10">
-                                    <div className="flex items-center gap-2 text-white/60 text-sm">
-                                        <ExternalLink className="w-4 h-4" />
-                                        <span>Live Preview</span>
-                                    </div>
-                                </div>
-                                <div className="flex-1 relative">
-                                    <iframe
-                                        srcDoc={currentProject.preview}
-                                        className="w-full h-full border-0 opacity-100"
-                                        title="App Preview"
-                                    />
-                                </div>
+                            <div className="h-full">
+                                <iframe
+                                    srcDoc={currentProject.preview}
+                                    className="w-full h-full border-0 opacity-100"
+                                    title="App Preview"
+                                />
                             </div>
                         )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="p-4 border-t border-white/10 flex gap-2">
-                        <GlassButton variant="primary" size="sm">
-                            <Play className="w-4 h-4 mr-2" />
-                            Deploy
-                        </GlassButton>
-                        <GlassButton variant="dark" size="sm">
-                            <Download className="w-4 h-4 mr-2" />
-                            Download
-                        </GlassButton>
                     </div>
                 </div>
             )}
