@@ -61,7 +61,7 @@ export function ChatPanel({
                                 }}
                             >
                                 <div className={`w-3 h-3 rounded-full flex items-center justify-center transition-all duration-300 ${step.status === 'completed' ? 'bg-green-500' :
-                                        step.status === 'generating' ? 'bg-blue-400' : 'bg-white/20'
+                                    step.status === 'generating' ? 'bg-blue-400' : 'bg-white/20'
                                     }`}>
                                     {step.status === 'completed' ? (
                                         <CheckCircle className="w-2 h-2 text-white" />
@@ -73,7 +73,7 @@ export function ChatPanel({
                                 </div>
                                 <div className="text-sm">
                                     <div className={`font-medium transition-colors duration-300 ${step.status === 'completed' ? 'text-green-400' :
-                                            step.status === 'generating' ? 'text-blue-400' : 'text-white/40'
+                                        step.status === 'generating' ? 'text-blue-400' : 'text-white/40'
                                         }`}>
                                         {step.name}
                                     </div>

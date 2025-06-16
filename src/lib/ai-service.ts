@@ -1,4 +1,4 @@
-import { VoltaicPromptBuilder } from './voltaic-prompts';
+
 
 export interface AIGenerationRequest {
     prompt: string;
@@ -26,8 +26,8 @@ export class VoltaicAIService {
     private baseUrl: string;
 
     constructor() {
-        this.apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || '';
-        this.model = process.env.NEXT_PUBLIC_OPENAI_MODEL || process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || 'gpt-4';
+        this.apiKey = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || '';
+        this.model = process.env.OPENAI_MODEL || process.env.ANTHROPIC_MODEL || 'gpt-4';
         this.baseUrl = this.apiKey.startsWith('sk-ant-')
             ? 'https://api.anthropic.com/v1/messages'
             : 'https://api.openai.com/v1/chat/completions';

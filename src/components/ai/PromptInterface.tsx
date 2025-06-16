@@ -169,14 +169,68 @@ This will be a production-ready application with beautiful glass morphism UI!`;
 
             await new Promise(resolve => setTimeout(resolve, 700));
 
-            const { aiService } = await import('@/lib/ai-service');
-            const generatedApp = await aiService.generateApp({
-                prompt: userPrompt,
-                previousMessages: messages.slice(1).map(m => ({
-                    role: m.type === 'user' ? 'user' : 'assistant',
-                    content: m.content
-                }))
+            // Call the new LangChain API
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    messages: [
+                        ...messages.slice(1).map(m => ({
+                            role: m.type === 'user' ? 'user' : 'assistant',
+                            content: m.content
+                        })),
+                        { role: 'user', content: userPrompt }
+                    ],
+                    isNewApp: true
+                })
             });
+
+            if (!response.ok) {
+                throw new Error('Failed to generate app');
+            }
+
+            // Handle streaming response
+            const reader = response.body?.getReader();
+            if (!reader) {
+                throw new Error('No response body');
+            }
+
+            let generatedApp = {
+                name: 'Generated App',
+                description: 'A modern application built with Next.js and TypeScript',
+                files: [],
+                preview: '<div>App generated successfully!</div>'
+            };
+
+            // Process streaming chunks
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = new TextDecoder().decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.type === 'token' && streamingMessage) {
+                                setStreamingMessage(prev => prev ? {
+                                    ...prev,
+                                    content: prev.content + data.content
+                                } : null);
+                            } else if (data.type === 'done') {
+                                // Generation complete
+                                break;
+                            }
+                        } catch (e) {
+                            // Ignore parsing errors
+                        }
+                    }
+                }
+            }
 
             await new Promise(resolve => setTimeout(resolve, 1000));
             updateGenerationStep('preview', 'completed');
@@ -252,22 +306,82 @@ This will be a production-ready application with beautiful glass morphism UI!`;
 
         try {
             const assistantMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            const responseContent = `I understand you'd like to modify the app. Let me analyze your request and make the necessary changes.
 
-**Your Request:** ${userPrompt}
-
-I'll update the components and regenerate the preview with your requested changes. This might take a moment...`;
-
-            const finalContent = await simulateStreaming(responseContent, assistantMessageId);
-
-            const assistantMessage: Message = {
+            // Initialize streaming message
+            setStreamingMessage({
                 id: assistantMessageId,
                 type: 'assistant',
-                content: finalContent,
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, assistantMessage]);
-            setStreamingMessage(null);
+                content: '',
+                timestamp: new Date(),
+                isStreaming: true
+            });
+
+            // Call the LangChain API for conversation
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    messages: [
+                        ...messages.map(m => ({
+                            role: m.type === 'user' ? 'user' : 'assistant',
+                            content: m.content
+                        })),
+                        { role: 'user', content: userPrompt }
+                    ],
+                    isNewApp: false
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to continue conversation');
+            }
+
+            // Handle streaming response
+            const reader = response.body?.getReader();
+            if (!reader) {
+                throw new Error('No response body');
+            }
+
+            let fullContent = '';
+
+            // Process streaming chunks
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = new TextDecoder().decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.type === 'token') {
+                                fullContent += data.content;
+                                setStreamingMessage(prev => prev ? {
+                                    ...prev,
+                                    content: fullContent
+                                } : null);
+                            } else if (data.type === 'done') {
+                                // Finalize the message
+                                const finalMessage: Message = {
+                                    id: assistantMessageId,
+                                    type: 'assistant',
+                                    content: fullContent,
+                                    timestamp: new Date()
+                                };
+                                setMessages(prev => [...prev, finalMessage]);
+                                setStreamingMessage(null);
+                                break;
+                            }
+                        } catch (e) {
+                            // Ignore parsing errors
+                        }
+                    }
+                }
+            }
 
         } catch (error) {
             console.error('Error in conversation:', error);
@@ -278,6 +392,7 @@ I'll update the components and regenerate the preview with your requested change
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
+            setStreamingMessage(null);
         } finally {
             setIsGenerating(false);
         }
