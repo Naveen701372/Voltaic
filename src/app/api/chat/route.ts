@@ -6,7 +6,7 @@ import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { VOLTAIC_SYSTEM_PROMPT } from '@/lib/voltaic-system-prompt';
 
-// Voltaic Tools
+// Voltaic Tools - Simplified for now
 const voltWriteTool = new DynamicStructuredTool({
     name: 'volt_write',
     description: 'Create or update a file with the given content',
@@ -23,39 +23,6 @@ const voltWriteTool = new DynamicStructuredTool({
             content,
             description,
             success: true
-        };
-    }
-});
-
-const voltDependencyTool = new DynamicStructuredTool({
-    name: 'volt_dependency',
-    description: 'Note required dependencies (for display only, not actual installation)',
-    schema: z.object({
-        packages: z.string().describe('Space-separated list of package names')
-    }),
-    func: async ({ packages }) => {
-        console.log('Tool: volt_dependency called with', packages);
-        return {
-            type: 'dependencies_noted',
-            packages: packages.split(' '),
-            message: `Dependencies noted: ${packages} (for reference only)`
-        };
-    }
-});
-
-const voltExecuteSqlTool = new DynamicStructuredTool({
-    name: 'volt_execute_sql',
-    description: 'Generate SQL schema for database setup',
-    schema: z.object({
-        sql: z.string().describe('SQL commands to execute'),
-        description: z.string().describe('Description of what this SQL does')
-    }),
-    func: async ({ sql, description }) => {
-        return {
-            type: 'sql_generated',
-            sql,
-            description,
-            message: `SQL schema generated: ${description}`
         };
     }
 });
@@ -94,7 +61,7 @@ export async function POST(req: NextRequest) {
         console.log('Chat API called with', messages.length, 'messages');
 
         const model = getAIModel();
-        const tools = [voltWriteTool, voltDependencyTool, voltExecuteSqlTool];
+        const tools = [voltWriteTool]; // Only file writing for now
 
         // Convert messages to LangChain format
         const langchainMessages = [

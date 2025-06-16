@@ -116,10 +116,6 @@ export class VoltaicAIService {
                                         description: result.description,
                                         type: this.getFileType(result.path)
                                     });
-                                } else if (result.type === 'dependencies_noted') {
-                                    dependencies.push(...result.packages);
-                                } else if (result.type === 'sql_generated') {
-                                    sqlSchemas.push(result.sql);
                                 }
 
                                 // Yield updates when tools are executed
