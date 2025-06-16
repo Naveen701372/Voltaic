@@ -331,22 +331,23 @@ Return the code for each file in this exact format:
             const { ChatOpenAI } = await import('@langchain/openai');
             const { HumanMessage, SystemMessage } = await import('@langchain/core/messages');
 
-            const anthropicKey = process.env.ANTHROPIC_API_KEY;
-            const openaiKey = process.env.OPENAI_API_KEY;
-
+            const anthropicKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+            const openaiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+            console.log('anthropicKey', anthropicKey);
+            console.log('openaiKey', openaiKey);
             let model;
 
             // Use appropriate model based on useAnthropic flag
             if (params.useAnthropic && anthropicKey) {
                 model = new ChatAnthropic({
                     apiKey: anthropicKey,
-                    model: 'claude-3-5-sonnet-20241022',
+                    model: process.env.NEXT_PUBLIC_ANTHROPIC_MODEL,
                     temperature: 0.1
                 });
             } else if (openaiKey) {
                 model = new ChatOpenAI({
                     apiKey: openaiKey,
-                    model: 'gpt-4-turbo-preview',
+                    model: process.env.NEXT_PUBLIC_OPENAI_MODEL,
                     temperature: 0.1
                 });
             } else if (anthropicKey) {

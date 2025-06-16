@@ -3,74 +3,78 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export async function POST(req: NextRequest) {
-    try {
-        const { projectId, title, files } = await req.json();
+  try {
+    const { projectId, title, files } = await req.json();
 
-        if (!projectId || !files || !Array.isArray(files)) {
-            return NextResponse.json(
-                { success: false, error: 'Invalid request parameters' },
-                { status: 400 }
-            );
-        }
+    if (!projectId || !files || !Array.isArray(files)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid request parameters' },
+        { status: 400 }
+      );
+    }
 
-        // Create project directory
-        const projectDir = path.join(process.cwd(), 'generated-apps', projectId);
-        await fs.mkdir(projectDir, { recursive: true });
+    // Create project directory
+    const projectDir = path.join(process.cwd(), 'generated-apps', projectId);
+    await fs.mkdir(projectDir, { recursive: true });
 
-        // Create src directory
-        const srcDir = path.join(projectDir, 'src');
-        await fs.mkdir(srcDir, { recursive: true });
+    // Create src directory
+    const srcDir = path.join(projectDir, 'src');
+    await fs.mkdir(srcDir, { recursive: true });
 
-        // Write each file
-        for (const file of files) {
-            const filePath = path.join(srcDir, file.path);
-            const fileDir = path.dirname(filePath);
+    // Create app directory
+    const appDir = path.join(srcDir, 'app');
+    await fs.mkdir(appDir, { recursive: true });
 
-            // Ensure directory exists
-            await fs.mkdir(fileDir, { recursive: true });
+    // Write each file
+    for (const file of files) {
+      const filePath = path.join(srcDir, file.path);
+      const fileDir = path.dirname(filePath);
 
-            // Write file content
-            await fs.writeFile(filePath, file.content, 'utf8');
-        }
+      // Ensure directory exists
+      await fs.mkdir(fileDir, { recursive: true });
 
-        // Create package.json for the project
-        const packageJson = {
-            name: projectId,
-            version: '0.1.0',
-            private: true,
-            scripts: {
-                dev: 'next dev -p 3003',
-                build: 'next build',
-                start: 'next start',
-                lint: 'next lint'
-            },
-            dependencies: {
-                react: '^18',
-                'react-dom': '^18',
-                next: '14.0.4',
-                'lucide-react': '^0.263.1'
-            },
-            devDependencies: {
-                typescript: '^5',
-                '@types/node': '^20',
-                '@types/react': '^18',
-                '@types/react-dom': '^18',
-                autoprefixer: '^10.0.1',
-                postcss: '^8',
-                tailwindcss: '^3.3.0'
-            }
-        };
+      // Write file content
+      await fs.writeFile(filePath, file.content, 'utf8');
+    }
 
-        await fs.writeFile(
-            path.join(projectDir, 'package.json'),
-            JSON.stringify(packageJson, null, 2),
-            'utf8'
-        );
+    // Create package.json for the project
+    const packageJson = {
+      name: projectId,
+      version: '0.1.0',
+      private: true,
+      scripts: {
+        dev: 'next dev -p 3003',
+        build: 'next build',
+        start: 'next start',
+        lint: 'next lint'
+      },
+      dependencies: {
+        react: '^18',
+        'react-dom': '^18',
+        next: '14.0.4',
+        'lucide-react': '^0.263.1'
+      },
+      devDependencies: {
+        typescript: '^5',
+        '@types/node': '^20',
+        '@types/react': '^18',
+        '@types/react-dom': '^18',
+        autoprefixer: '^10.0.1',
+        postcss: '^8',
+        tailwindcss: '^3.3.0'
+      }
+    };
 
-        // Skip creating tailwind.config.js and next.config.js - they're not needed for the preview
+    await fs.writeFile(
+      path.join(projectDir, 'package.json'),
+      JSON.stringify(packageJson, null, 2),
+      'utf8'
+    );
 
-        // Create globals.css
-        const globalsCss = `@tailwind base;
+    // Skip creating tailwind.config.js and next.config.js - they're not needed for the preview
+
+    // Create globals.css
+    const globalsCss = `@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -118,14 +122,14 @@ export async function POST(req: NextRequest) {
   }
 }`;
 
-        await fs.writeFile(
-            path.join(srcDir, 'app', 'globals.css'),
-            globalsCss,
-            'utf8'
-        );
+    await fs.writeFile(
+      path.join(srcDir, 'app', 'globals.css'),
+      globalsCss,
+      'utf8'
+    );
 
-        // Create layout.tsx
-        const layoutTsx = `import './globals.css'
+    // Create layout.tsx
+    const layoutTsx = `import './globals.css'
 
 export const metadata = {
   title: '${title}',
@@ -144,28 +148,28 @@ export default function RootLayout({
   )
 }`;
 
-        await fs.writeFile(
-            path.join(srcDir, 'app', 'layout.tsx'),
-            layoutTsx,
-            'utf8'
-        );
+    await fs.writeFile(
+      path.join(srcDir, 'app', 'layout.tsx'),
+      layoutTsx,
+      'utf8'
+    );
 
-        console.log(`Successfully wrote ${files.length} files to ${projectDir}`);
+    console.log(`Successfully wrote ${files.length} files to ${projectDir}`);
 
-        return NextResponse.json({
-            success: true,
-            projectDir,
-            filesWritten: files.length
-        });
+    return NextResponse.json({
+      success: true,
+      projectDir,
+      filesWritten: files.length
+    });
 
-    } catch (error) {
-        console.error('File writing error:', error);
-        return NextResponse.json(
-            {
-                success: false,
-                error: error instanceof Error ? error.message : 'Unknown error'
-            },
-            { status: 500 }
-        );
-    }
+  } catch (error) {
+    console.error('File writing error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
 } 
