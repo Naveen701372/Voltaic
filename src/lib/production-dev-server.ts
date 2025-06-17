@@ -86,7 +86,7 @@ export class ProductionDevServerManager {
                 status: 'starting',
                 logs: [],
                 pid: null,
-                url: `http://localhost:${port}`
+                url: `/api/dev-server/preview/${projectId}`
             };
 
             this.runningServers.set(projectId, serverInfo);
@@ -150,11 +150,42 @@ export class ProductionDevServerManager {
         reactComponent: string,
         projectTitle: string
     ): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             serverInfo.status = 'building';
             serverInfo.logs.push(`[${new Date().toISOString()}] Creating quick preview content...`);
 
             try {
+                // If reactComponent is empty, try to read from the project directory
+                if (!reactComponent && serverInfo.projectPath) {
+                    try {
+                        // Read the main page file
+                        const mainPagePath = path.join(serverInfo.projectPath, 'src', 'app', 'page.tsx');
+                        const pageContent = await fs.readFile(mainPagePath, 'utf8');
+
+                        // Also read component files
+                        const componentsDir = path.join(serverInfo.projectPath, 'src', 'components');
+                        let allContent = pageContent;
+
+                        try {
+                            const componentFiles = await fs.readdir(componentsDir);
+                            for (const file of componentFiles) {
+                                if (file.endsWith('.tsx')) {
+                                    const componentPath = path.join(componentsDir, file);
+                                    const componentContent = await fs.readFile(componentPath, 'utf8');
+                                    allContent += '\n' + componentContent;
+                                }
+                            }
+                        } catch {
+                            // Components directory might not exist
+                        }
+
+                        reactComponent = allContent;
+                    } catch (error) {
+                        serverInfo.logs.push(`[WARNING] Failed to read project files: ${error}`);
+                        // Continue with empty component if reading fails
+                    }
+                }
+
                 // Create HTML content and store it directly
                 const htmlContent = `<!DOCTYPE html>
 <html lang="en">

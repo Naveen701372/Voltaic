@@ -19,53 +19,62 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
-        // Create project directory in /tmp/voltaic-dev-servers/{projectId}
+        // Create temp directory for ZIP file
         const baseDir = '/tmp';
+        const zipPath = join(baseDir, `${projectId}.zip`);
         const projectDir = join(baseDir, 'voltaic-dev-servers', projectId);
-        await mkdir(projectDir, { recursive: true });
 
-        // Convert File to Buffer and save it temporarily
-        const arrayBuffer = await zipFile.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const tempZipPath = join(baseDir, `${projectId}.zip`);
-        await writeFile(tempZipPath, buffer);
+        // Write ZIP file to disk
+        const buffer = Buffer.from(await zipFile.arrayBuffer());
+        await mkdir(join(baseDir, 'voltaic-dev-servers'), { recursive: true });
+        await writeFile(zipPath, buffer);
 
         try {
-            // Extract ZIP contents
-            await extract(tempZipPath, {
+            // Extract ZIP file
+            await extract(zipPath, {
                 dir: projectDir,
                 onEntry: (entry) => {
-                    // Skip __MACOSX and hidden files
+                    // Skip __MACOSX and dot files
                     if (entry.fileName.startsWith('__MACOSX') || entry.fileName.startsWith('.')) {
-                        return;
+                        return false;
                     }
-
-                    // Remove the root directory from the path if it exists
-                    const parts = entry.fileName.split('/');
-                    if (parts.length > 1) {
-                        parts.shift(); // Remove the first directory
-                    }
+                    return true;
                 }
             });
 
-            // Clean up the temporary ZIP file
-            await rm(tempZipPath);
+            // Delete ZIP file after extraction
+            await rm(zipPath);
 
-            // Start the dev server using the manager directly
+            // Start dev server
             const manager = ProductionDevServerManager.getInstance();
             const result = await manager.createAndStartDevServer(
                 projectId,
-                '', // Empty React component since we're using a full project
-                projectTitle || 'Uploaded Project',
+                '', // Empty reactComponent since we're using the ZIP file
+                projectTitle,
                 quickMode
             );
 
-            return NextResponse.json(result);
+            if (!result.success) {
+                return NextResponse.json({
+                    success: false,
+                    error: result.error || 'Failed to start dev server'
+                }, { status: 500 });
+            }
+
+            return NextResponse.json({
+                success: true,
+                url: result.url,
+                port: result.port,
+                logs: result.logs
+            });
 
         } catch (error) {
             // Clean up on error
-            await rm(projectDir, { recursive: true, force: true });
-            await rm(tempZipPath, { force: true });
+            try {
+                await rm(zipPath, { force: true });
+                await rm(projectDir, { recursive: true, force: true });
+            } catch { }
+
             throw error;
         }
 
@@ -73,7 +82,7 @@ export async function POST(request: NextRequest) {
         console.error('Error handling ZIP upload:', error);
         return NextResponse.json({
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error occurred'
+            error: error instanceof Error ? error.message : String(error)
         }, { status: 500 });
     }
 } 
