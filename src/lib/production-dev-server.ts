@@ -194,7 +194,10 @@ export class ProductionDevServerManager {
                     // Remove imports
                     content = content.replace(/import\s+.*?;?\n/g, '');
                     // Remove exports but keep the component definition
-                    content = content.replace(/export\s+(default\s+)?function\s+(\w+)/, 'function $2');
+                    content = content.replace(/export\s+default\s+function\s+(\w+)/, 'function $1');
+                    content = content.replace(/export\s+default\s+const\s+(\w+)/, 'const $1');
+                    content = content.replace(/export\s+function\s+(\w+)/, 'function $1');
+                    content = content.replace(/export\s+const\s+(\w+)/, 'const $1');
                     // Remove CSS imports
                     content = content.replace(/import\s+['"].*\.css['"];?\n?/g, '');
                     return content;
@@ -202,13 +205,21 @@ export class ProductionDevServerManager {
 
                 // Process main component
                 mainComponent = mainComponent.replace(/import\s+.*?;?\n/g, '');
+                // Handle default exports
                 mainComponent = mainComponent.replace(/export\s+default\s+function\s+(\w+)/, 'function $1');
-                mainComponent = mainComponent.replace(/export\s+default\s+(\w+)/, 'const $1 = ');
+                mainComponent = mainComponent.replace(/export\s+default\s+const\s+(\w+)/, 'const $1');
+                // Handle named exports
                 mainComponent = mainComponent.replace(/export\s+function\s+(\w+)/, 'function $1');
+                mainComponent = mainComponent.replace(/export\s+const\s+(\w+)/, 'const $1');
+                // Handle direct default exports of identifiers
+                mainComponent = mainComponent.replace(/export\s+default\s+(\w+)/, 'const $1 = $1');
+                // Remove CSS imports
                 mainComponent = mainComponent.replace(/import\s+['"].*\.css['"];?\n?/g, '');
 
                 // Log component detection on server side
-                const mainComponentMatch = mainComponent.match(/function\s+(\w+)/) || mainComponent.match(/const\s+(\w+)\s*=/);
+                const mainComponentMatch = mainComponent.match(/function\s+(\w+)/) ||
+                    mainComponent.match(/const\s+(\w+)\s*=/) ||
+                    mainComponent.match(/const\s+(\w+)\s*=/);
                 if (mainComponentMatch) {
                     serverInfo.logs.push(`[${new Date().toISOString()}] Found main component: ${mainComponentMatch[1]}`);
                 }
@@ -288,39 +299,29 @@ export class ProductionDevServerManager {
                 return constMatch[1];
             }
 
-            return 'DefaultApp';
+            return null;
         };
 
         const mainComponentName = extractMainComponent(\`${mainComponent}\`);
         console.log('Found main component:', mainComponentName);
         
-        // If no component was found, create a default one
-        if (mainComponentName === 'DefaultApp') {
-            function DefaultApp() {
-                return (
-                    <div className="p-4">
-                        <h1 className="text-2xl font-bold mb-4">Welcome to {PROJECT_TITLE}</h1>
-                        <p className="text-gray-600">No app component found in the uploaded files.</p>
-                    </div>
-                );
-            }
+        // Create a default component if none is found
+        function DefaultApp() {
+            return (
+                <div className="p-4">
+                    <h1 className="text-2xl font-bold mb-4">Welcome to {PROJECT_TITLE}</h1>
+                    <p className="text-gray-600">No app component found in the uploaded files.</p>
+                </div>
+            );
         }
 
         function AppWrapper() {
             // Try to find the component in different ways
-            const MainComponent = window[mainComponentName] || (() => {
-                // If component not found, try to find Greeting component
-                if (window.Greeting) {
-                    return <Greeting />;
-                }
-                // If no components found, show default
-                return (
-                    <div className="p-4">
-                        <h1 className="text-2xl font-bold mb-4">Welcome to {PROJECT_TITLE}</h1>
-                        <p className="text-gray-600">Component '{mainComponentName}' not found.</p>
-                    </div>
-                );
-            })();
+            const MainComponent = mainComponentName ? window[mainComponentName] : null;
+            
+            if (!MainComponent) {
+                console.log('Component not found in window object:', mainComponentName);
+            }
 
             return (
                 <div style={{
@@ -347,7 +348,9 @@ export class ProductionDevServerManager {
                             ✅ Production Ready • Platform: Vercel
                         </div>
                     </div>
-                    <MainComponent />
+                    {MainComponent ? <MainComponent /> : (
+                        window.Greeting ? <Greeting /> : <DefaultApp />
+                    )}
                 </div>
             );
         }
