@@ -595,6 +595,11 @@ Return ONLY the code for each file in this exact format (no extra text):
 
         logger.agentProgress('coder-agent', 'workflow_current', 'Parsing generated code into files');
         console.log(`🔧 CODE GENERATOR: Parsing generated code into files`);
+        console.log(`🔧 CODE GENERATOR: Raw AI response length: ${codeResponse.length} characters`);
+        console.log(`🔧 CODE GENERATOR: First 500 chars of response:`);
+        console.log(codeResponse.substring(0, 500));
+        console.log(`🔧 CODE GENERATOR: Last 500 chars of response:`);
+        console.log(codeResponse.substring(Math.max(0, codeResponse.length - 500)));
 
         // Parse the generated code into files
         const files = this.parseGeneratedCode(codeResponse, title);
@@ -1009,6 +1014,12 @@ ${analysisReport.length > 0 ? '\n**Notes:**\n' + analysisReport.join('\n') : ''}
         const files: GeneratedFile[] = [];
         const sections = codeResponse.split('====');
 
+        console.log(`🔍 PARSER: Found ${sections.length} sections in AI response`);
+        sections.forEach((section, index) => {
+            const preview = section.trim().substring(0, 100);
+            console.log(`🔍 PARSER: Section ${index}: "${preview}${section.length > 100 ? '...' : ''}"`);
+        });
+
         for (let i = 1; i < sections.length; i += 2) {
             if (i + 1 < sections.length) {
                 const pathLine = sections[i].trim();
@@ -1016,15 +1027,24 @@ ${analysisReport.length > 0 ? '\n**Notes:**\n' + analysisReport.join('\n') : ''}
 
                 if (pathLine && code) {
                     let path = pathLine.replace(/=+/g, '').trim();
+                    console.log(`🔍 PARSER: Processing file: "${path}" (original pathLine: "${pathLine}")`);
 
-                    // Normalize paths to use src/ structure consistently
+                    // Smart path normalization: only add src/ prefix if path doesn't already have it
+                    // and the path starts with app/ or components/
                     if (!path.startsWith('src/')) {
-                        if (path.startsWith('app/')) {
-                            path = 'src/' + path;
-                        } else if (path.startsWith('components/')) {
-                            path = 'src/' + path;
+                        if (path.startsWith('app/') || path.startsWith('components/')) {
+                            const newPath = 'src/' + path;
+                            console.log(`🔍 PARSER: Normalized path: "${path}" -> "${newPath}"`);
+                            path = newPath;
+                        }
+                        // For standalone CSS files, put them in src/app/
+                        else if (path.endsWith('.css') && !path.includes('/')) {
+                            const newPath = 'src/app/' + path;
+                            console.log(`🔍 PARSER: CSS file normalized: "${path}" -> "${newPath}"`);
+                            path = newPath;
                         }
                     }
+                    // If path already starts with src/, leave it as-is to avoid src/src/ nesting
 
                     // Skip if we already have this file (prevent duplicates)
                     if (files.some(f => f.path === path)) {
@@ -1060,7 +1080,12 @@ ${analysisReport.length > 0 ? '\n**Notes:**\n' + analysisReport.join('\n') : ''}
         // Fallback if parsing fails
         if (files.length === 0) {
             console.log(`⚠️  No files parsed, using fallback generation`);
-            return this.generateFallbackFiles(title);
+            const fallbackFiles = this.generateFallbackFiles(title);
+            console.log(`📋 Fallback files generated (${fallbackFiles.length}):`);
+            fallbackFiles.forEach(file => {
+                console.log(`  📁 ${file.path} (${file.type}) - ${file.description}`);
+            });
+            return fallbackFiles;
         }
 
         // Add required CSS file if missing
@@ -1576,6 +1601,9 @@ export function Features() {
 
     private generateLayoutComponent(title: string): string {
         return `import './globals.css'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: '${title}',
@@ -1589,7 +1617,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }`;

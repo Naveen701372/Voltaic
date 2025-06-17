@@ -25,16 +25,26 @@ export async function POST(req: NextRequest) {
     const appDir = path.join(srcDir, 'app');
     await fs.mkdir(appDir, { recursive: true });
 
+    // Create components directory
+    const componentsDir = path.join(srcDir, 'components');
+    await fs.mkdir(componentsDir, { recursive: true });
+
     // Write each file
     for (const file of files) {
-      const filePath = path.join(srcDir, file.path);
+      // Remove src/ prefix from file.path since we're already in the src directory
+      const relativePath = file.path.startsWith('src/') ? file.path.replace('src/', '') : file.path;
+      const filePath = path.join(srcDir, relativePath);
       const fileDir = path.dirname(filePath);
+
+      console.log(`📁 Writing file: ${file.path} -> ${filePath}`);
+      console.log(`📁 Directory: ${fileDir}`);
 
       // Ensure directory exists
       await fs.mkdir(fileDir, { recursive: true });
 
       // Write file content
       await fs.writeFile(filePath, file.content, 'utf8');
+      console.log(`✅ File written successfully: ${filePath}`);
     }
 
     // Create package.json for the project
@@ -130,6 +140,9 @@ export async function POST(req: NextRequest) {
 
     // Create layout.tsx
     const layoutTsx = `import './globals.css'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: '${title}',
@@ -143,7 +156,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }`;
@@ -155,11 +168,18 @@ export default function RootLayout({
     );
 
     console.log(`Successfully wrote ${files.length} files to ${projectDir}`);
+    console.log(`📋 Files written summary:`);
+    for (const file of files) {
+      const relativePath = file.path.startsWith('src/') ? file.path.replace('src/', '') : file.path;
+      const finalPath = path.join(srcDir, relativePath);
+      console.log(`  ✅ ${file.path} -> ${finalPath}`);
+    }
 
     return NextResponse.json({
       success: true,
       projectDir,
-      filesWritten: files.length
+      filesWritten: files.length,
+      filesList: files.map(f => f.path)
     });
 
   } catch (error) {
