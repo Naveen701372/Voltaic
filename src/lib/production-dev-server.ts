@@ -155,38 +155,53 @@ export class ProductionDevServerManager {
             serverInfo.logs.push(`[${new Date().toISOString()}] Creating quick preview content...`);
 
             try {
+                let components = new Map<string, string>();
+                let mainComponent = '';
+
                 // If reactComponent is empty, try to read from the project directory
                 if (!reactComponent && serverInfo.projectPath) {
                     try {
                         // Read the main page file
                         const mainPagePath = path.join(serverInfo.projectPath, 'src', 'app', 'page.tsx');
-                        const pageContent = await fs.readFile(mainPagePath, 'utf8');
+                        mainComponent = await fs.readFile(mainPagePath, 'utf8');
                         serverInfo.logs.push(`[${new Date().toISOString()}] Read main page content from: ${mainPagePath}`);
 
                         // Also read component files
                         const componentsDir = path.join(serverInfo.projectPath, 'src', 'components');
-                        let allContent = pageContent;
-
                         try {
                             const componentFiles = await fs.readdir(componentsDir);
                             for (const file of componentFiles) {
                                 if (file.endsWith('.tsx')) {
                                     const componentPath = path.join(componentsDir, file);
                                     const componentContent = await fs.readFile(componentPath, 'utf8');
-                                    allContent += '\n' + componentContent;
+                                    const componentName = file.replace('.tsx', '');
+                                    components.set(componentName, componentContent);
                                     serverInfo.logs.push(`[${new Date().toISOString()}] Read component from: ${componentPath}`);
                                 }
                             }
                         } catch (error) {
                             serverInfo.logs.push(`[${new Date().toISOString()}] Note: No components directory found at ${componentsDir}`);
                         }
-
-                        reactComponent = allContent;
                     } catch (error) {
                         serverInfo.logs.push(`[WARNING] Failed to read project files: ${error}`);
-                        // Continue with empty component if reading fails
                     }
+                } else {
+                    mainComponent = reactComponent;
                 }
+
+                // Process components to remove imports and exports
+                const processedComponents = Array.from(components.entries()).map(([name, content]) => {
+                    // Remove imports
+                    content = content.replace(/import\s+.*?;?\n/g, '');
+                    // Remove exports but keep the component definition
+                    content = content.replace(/export\s+(default\s+)?function\s+(\w+)/, 'function $2');
+                    return content;
+                }).join('\n\n');
+
+                // Process main component
+                mainComponent = mainComponent.replace(/import\s+.*?;?\n/g, '');
+                mainComponent = mainComponent.replace(/export\s+(default\s+)?function\s+(\w+)/, 'function $2');
+                mainComponent = mainComponent.replace(/export\s+(default|const|let|var)\s+/, '');
 
                 // Create HTML content and store it directly
                 const htmlContent = `<!DOCTYPE html>
@@ -213,6 +228,25 @@ export class ProductionDevServerManager {
             z-index: 1000;
             font-family: monospace;
         }
+        /* Add any imported CSS here */
+        .greeting-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        .greeting-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 1rem;
+        }
+        .greeting-subtitle {
+            font-size: 1.25rem;
+            color: #4b5563;
+        }
     </style>
 </head>
 <body>
@@ -221,35 +255,26 @@ export class ProductionDevServerManager {
         ⚡ Voltaic Quick Preview • Project: ${serverInfo.projectId}
     </div>
     <script type="text/babel">
-        ${reactComponent}
-        
-        // Extract the default export or named export 'App' from the code
-        const extractAppComponent = (code) => {
+        // Define all components first
+        ${processedComponents}
+
+        // Define main component
+        ${mainComponent}
+
+        // Extract the default export or named export from the code
+        const extractMainComponent = (code) => {
             // Try to find export default
-            const defaultExportMatch = code.match(/export\s+default\s+function\s+(\w+)/);
-            if (defaultExportMatch) {
-                return defaultExportMatch[1];
+            const defaultMatch = code.match(/function\s+(\w+)/);
+            if (defaultMatch) {
+                return defaultMatch[1];
             }
-
-            // Try to find named export 'App'
-            const namedExportMatch = code.match(/export\s+function\s+App/);
-            if (namedExportMatch) {
-                return 'App';
-            }
-
-            // Try to find any component definition
-            const componentMatch = code.match(/function\s+(\w+)\s*\([^\)]*\)\s*{\s*return\s*</);
-            if (componentMatch) {
-                return componentMatch[1];
-            }
-
-            return null;
+            return 'DefaultApp';
         };
 
-        const appComponentName = extractAppComponent(\`${reactComponent}\`) || 'DefaultApp';
+        const mainComponentName = extractMainComponent(\`${mainComponent}\`);
         
         // If no component was found, create a default one
-        if (appComponentName === 'DefaultApp') {
+        if (mainComponentName === 'DefaultApp') {
             function DefaultApp() {
                 return (
                     <div className="p-4">
@@ -261,7 +286,7 @@ export class ProductionDevServerManager {
         }
 
         function AppWrapper() {
-            const App = window[appComponentName];
+            const MainComponent = window[mainComponentName];
             return (
                 <div style={{
                     minHeight: '100vh',
@@ -287,7 +312,7 @@ export class ProductionDevServerManager {
                             ✅ Production Ready • Platform: Vercel
                         </div>
                     </div>
-                    <App />
+                    <MainComponent />
                 </div>
             );
         }
