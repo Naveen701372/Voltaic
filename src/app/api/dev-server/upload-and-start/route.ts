@@ -3,6 +3,7 @@ import extract from 'extract-zip';
 import { mkdir, writeFile, rm } from 'fs/promises';
 import { join } from 'path';
 import { ProductionDevServerManager } from '@/lib/production-dev-server';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
     try {
@@ -24,26 +25,41 @@ export async function POST(request: NextRequest) {
         const zipPath = join(baseDir, `${projectId}.zip`);
         const projectDir = join(baseDir, 'voltaic-dev-servers', projectId);
 
+        logger.info('zip-upload', `Starting ZIP upload process for ${projectId}`, {
+            zipSize: zipFile.size,
+            projectDir
+        });
+
         // Write ZIP file to disk
         const buffer = Buffer.from(await zipFile.arrayBuffer());
         await mkdir(join(baseDir, 'voltaic-dev-servers'), { recursive: true });
         await writeFile(zipPath, buffer);
+        logger.info('zip-upload', `ZIP file written to ${zipPath}`);
 
         try {
             // Extract ZIP file
+            const extractedFiles: string[] = [];
             await extract(zipPath, {
                 dir: projectDir,
                 onEntry: (entry) => {
                     // Skip __MACOSX and dot files
                     if (entry.fileName.startsWith('__MACOSX') || entry.fileName.startsWith('.')) {
+                        logger.info('zip-upload', `Skipping file: ${entry.fileName}`);
                         return false;
                     }
+                    extractedFiles.push(entry.fileName);
+                    logger.info('zip-upload', `Extracting: ${entry.fileName}`);
                     return true;
                 }
             });
 
+            logger.info('zip-upload', `Extracted ${extractedFiles.length} files`, {
+                files: extractedFiles
+            });
+
             // Delete ZIP file after extraction
             await rm(zipPath);
+            logger.info('zip-upload', `Cleaned up temporary ZIP file`);
 
             // Start dev server
             const manager = ProductionDevServerManager.getInstance();
@@ -65,7 +81,8 @@ export async function POST(request: NextRequest) {
                 success: true,
                 url: result.url,
                 port: result.port,
-                logs: result.logs
+                logs: result.logs,
+                extractedFiles // Include the list of extracted files in the response
             });
 
         } catch (error) {
@@ -73,13 +90,16 @@ export async function POST(request: NextRequest) {
             try {
                 await rm(zipPath, { force: true });
                 await rm(projectDir, { recursive: true, force: true });
-            } catch { }
+                logger.error('zip-upload', `Cleaned up files after error`, { error });
+            } catch (cleanupError) {
+                logger.error('zip-upload', `Failed to clean up after error`, { cleanupError });
+            }
 
             throw error;
         }
 
     } catch (error) {
-        console.error('Error handling ZIP upload:', error);
+        logger.error('zip-upload', `Error handling ZIP upload:`, error);
         return NextResponse.json({
             success: false,
             error: error instanceof Error ? error.message : String(error)
