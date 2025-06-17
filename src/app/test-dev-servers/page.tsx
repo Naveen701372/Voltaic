@@ -701,7 +701,7 @@ export default function TestDevServersPage() {
                                                 {server.status === 'running' && (
                                                     <button
                                                         onClick={() => {
-                                                            setPreviewUrl(server.url);
+                                                            setPreviewUrl(`/api/dev-server/preview/${server.projectId}`);
                                                             setShowPreview(true);
                                                         }}
                                                         className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-1 px-3 rounded transition-colors"

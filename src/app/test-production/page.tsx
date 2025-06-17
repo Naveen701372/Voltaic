@@ -286,8 +286,8 @@ export default function TestProductionPage() {
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-4 py-2 font-medium capitalize ${activeTab === tab
-                                        ? 'text-white border-b-2 border-blue-400'
-                                        : 'text-white/60 hover:text-white/80'
+                                    ? 'text-white border-b-2 border-blue-400'
+                                    : 'text-white/60 hover:text-white/80'
                                     }`}
                             >
                                 {tab}
