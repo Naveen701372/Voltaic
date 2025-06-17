@@ -1,0 +1,22 @@
+.greeting-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 20px;
+}
+
+.greeting-title {
+    font-size: 3rem;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.greeting-text {
+    font-size: 1.2rem;
+    color: #4a5568;
+    text-align: center;
+}
