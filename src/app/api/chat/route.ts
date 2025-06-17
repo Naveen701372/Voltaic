@@ -29,8 +29,8 @@ const voltWriteTool = new DynamicStructuredTool({
 
 // Initialize AI models with provider selection
 const getAIModel = (forceProvider?: 'anthropic' | 'openai') => {
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    const openaiKey = process.env.OPENAI_API_KEY;
+    const anthropicKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+    const openaiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
     console.log('API Keys available:', { anthropic: !!anthropicKey, openai: !!openaiKey });
 
@@ -39,7 +39,7 @@ const getAIModel = (forceProvider?: 'anthropic' | 'openai') => {
         console.log('Using Anthropic Claude (forced)');
         return new ChatAnthropic({
             apiKey: anthropicKey,
-            model: 'claude-3-5-sonnet-20241022',
+            model: process.env.NEXT_PUBLIC_ANTHROPIC_MODEL,
             temperature: 0.1,
             streaming: true
         });
@@ -47,7 +47,7 @@ const getAIModel = (forceProvider?: 'anthropic' | 'openai') => {
         console.log('Using OpenAI GPT-4 (forced)');
         return new ChatOpenAI({
             apiKey: openaiKey,
-            model: 'gpt-4-turbo-preview',
+            model: process.env.NEXT_PUBLIC_OPENAI_MODEL,
             temperature: 0.1,
             streaming: true
         });
@@ -58,7 +58,7 @@ const getAIModel = (forceProvider?: 'anthropic' | 'openai') => {
         console.log('Using OpenAI GPT-4 (default)');
         return new ChatOpenAI({
             apiKey: openaiKey,
-            model: 'gpt-4-turbo-preview',
+            model: process.env.NEXT_PUBLIC_OPENAI_MODEL,
             temperature: 0.1,
             streaming: true
         });
@@ -66,7 +66,7 @@ const getAIModel = (forceProvider?: 'anthropic' | 'openai') => {
         console.log('Using Anthropic Claude (fallback)');
         return new ChatAnthropic({
             apiKey: anthropicKey,
-            model: 'claude-3-5-sonnet-20241022',
+            model: process.env.NEXT_PUBLIC_ANTHROPIC_MODEL,
             temperature: 0.1,
             streaming: true
         });

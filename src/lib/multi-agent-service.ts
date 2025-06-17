@@ -978,7 +978,7 @@ ${analysisReport.length > 0 ? '\n**Notes:**\n' + analysisReport.join('\n') : ''}
                 serviceName = 'Anthropic Claude';
                 model = new ChatAnthropic({
                     apiKey: anthropicKey,
-                    model: 'claude-3-5-sonnet-20241022',
+                    model: process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022',
                     temperature: 0.1
                 });
             } else {

@@ -27,8 +27,8 @@ export function getVoltaicConfig(): VoltaicConfig {
             buildTimeout: parseInt(process.env.VOLTAIC_BUILD_TIMEOUT || '60000')
         },
         ai: {
-            hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
-            hasOpenAIKey: !!process.env.OPENAI_API_KEY
+            hasAnthropicKey: !!process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY,
+            hasOpenAIKey: !!process.env.NEXT_PUBLIC_OPENAI_API_KEY
         }
     };
 }

@@ -8,20 +8,20 @@ export async function POST(req: NextRequest) {
         const { message } = await req.json();
 
         // Initialize AI model
-        const anthropicKey = process.env.ANTHROPIC_API_KEY;
-        const openaiKey = process.env.OPENAI_API_KEY;
+        const anthropicKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
+        const openaiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
         let model;
         if (anthropicKey) {
             model = new ChatAnthropic({
                 apiKey: anthropicKey,
-                model: 'claude-3-5-sonnet-20241022',
+                model: process.env.NEXT_PUBLIC_ANTHROPIC_MODEL,
                 temperature: 0.1
             });
         } else if (openaiKey) {
             model = new ChatOpenAI({
                 apiKey: openaiKey,
-                model: 'gpt-4-turbo-preview',
+                model: process.env.NEXT_PUBLIC_OPENAI_MODEL,
                 temperature: 0.1
             });
         } else {

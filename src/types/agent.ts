@@ -123,7 +123,7 @@ export const DEFAULT_AGENTS: AgentRegistry = {
         name: 'Idea Enhancement Agent',
         description: 'Enhances and refines user ideas into detailed project specifications',
         provider: 'openai',
-        model: 'gpt-4-turbo-preview',
+        model: process.env.NEXT_PUBLIC_OPENAI_MODEL || 'gpt-4-turbo-preview',
         temperature: 0.7,
         maxTokens: 4000,
         capabilities: [
@@ -140,7 +140,7 @@ export const DEFAULT_AGENTS: AgentRegistry = {
         name: 'Wireframe Generation Agent',
         description: 'Creates wireframes and system architecture diagrams',
         provider: 'claude',
-        model: 'claude-3-sonnet-20240229',
+        model: process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || 'claude-3-sonnet-20240229',
         temperature: 0.3,
         maxTokens: 6000,
         capabilities: [
@@ -158,7 +158,7 @@ export const DEFAULT_AGENTS: AgentRegistry = {
         name: 'Code Generation Agent',
         description: 'Generates complete application code from specifications',
         provider: 'claude',
-        model: 'claude-3-sonnet-20240229',
+        model: process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || 'claude-3-sonnet-20240229',
         temperature: 0.2,
         maxTokens: 8000,
         capabilities: [
@@ -176,7 +176,7 @@ export const DEFAULT_AGENTS: AgentRegistry = {
         name: 'Component Editor Agent',
         description: 'Edits and modifies individual components based on user feedback',
         provider: 'claude',
-        model: 'claude-3-sonnet-20240229',
+        model: process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || 'claude-3-sonnet-20240229',
         temperature: 0.3,
         maxTokens: 4000,
         capabilities: [
