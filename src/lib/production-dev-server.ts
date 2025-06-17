@@ -195,13 +195,17 @@ export class ProductionDevServerManager {
                     content = content.replace(/import\s+.*?;?\n/g, '');
                     // Remove exports but keep the component definition
                     content = content.replace(/export\s+(default\s+)?function\s+(\w+)/, 'function $2');
+                    // Remove CSS imports
+                    content = content.replace(/import\s+['"].*\.css['"];?\n?/g, '');
                     return content;
                 }).join('\n\n');
 
                 // Process main component
                 mainComponent = mainComponent.replace(/import\s+.*?;?\n/g, '');
-                mainComponent = mainComponent.replace(/export\s+(default\s+)?function\s+(\w+)/, 'function $2');
-                mainComponent = mainComponent.replace(/export\s+(default|const|let|var)\s+/, '');
+                mainComponent = mainComponent.replace(/export\s+default\s+function\s+(\w+)/, 'function $1');
+                mainComponent = mainComponent.replace(/export\s+default\s+(\w+)/, 'const $1 = ');
+                mainComponent = mainComponent.replace(/export\s+function\s+(\w+)/, 'function $1');
+                mainComponent = mainComponent.replace(/import\s+['"].*\.css['"];?\n?/g, '');
 
                 // Create HTML content and store it directly
                 const htmlContent = `<!DOCTYPE html>
@@ -266,15 +270,23 @@ export class ProductionDevServerManager {
 
         // Extract the default export or named export from the code
         const extractMainComponent = (code) => {
-            // Try to find export default
-            const defaultMatch = code.match(/function\s+(\w+)/);
-            if (defaultMatch) {
-                return defaultMatch[1];
+            // Try to find function declarations
+            const functionMatch = code.match(/function\s+(\w+)/);
+            if (functionMatch) {
+                return functionMatch[1];
             }
+
+            // Try to find const assignments (for arrow functions)
+            const constMatch = code.match(/const\s+(\w+)\s*=/);
+            if (constMatch) {
+                return constMatch[1];
+            }
+
             return 'DefaultApp';
         };
 
         const mainComponentName = extractMainComponent(\`${mainComponent}\`);
+        serverInfo.logs.push(\`[DEBUG] Found main component: \${mainComponentName}\`);
         
         // If no component was found, create a default one
         if (mainComponentName === 'DefaultApp') {
@@ -289,7 +301,21 @@ export class ProductionDevServerManager {
         }
 
         function AppWrapper() {
-            const MainComponent = window[mainComponentName];
+            // Try to find the component in different ways
+            const MainComponent = window[mainComponentName] || (() => {
+                // If component not found, try to find Greeting component
+                if (window.Greeting) {
+                    return <Greeting />;
+                }
+                // If no components found, show default
+                return (
+                    <div className="p-4">
+                        <h1 className="text-2xl font-bold mb-4">Welcome to {PROJECT_TITLE}</h1>
+                        <p className="text-gray-600">Component '{mainComponentName}' not found.</p>
+                    </div>
+                );
+            })();
+
             return (
                 <div style={{
                     minHeight: '100vh',
