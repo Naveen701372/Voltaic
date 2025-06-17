@@ -1,191 +1,306 @@
-# Voltaic - AI-Powered MVP Generator
+# ⚡ Voltaic AI App Generator
 
-Transform your ideas into production-ready MVPs with AI-powered development, stunning glass morphism UI, and seamless deployment.
+> **Hackathon Submission**: Transform ideas into reality with AI-powered MVP generation
 
-## 🚀 Current Status
+Voltaic is an intelligent AI-powered platform that transforms user ideas into fully functional web applications using a sophisticated multi-agent workflow system. Built for rapid prototyping and MVP development.
 
-**Phase 1: Foundation & Setup** - ✅ **COMPLETED**
+## 🚀 Key Features
 
-## 🚀 Current Status
+### 🤖 Multi-Agent AI Workflow
+- **Enthusiasm Agent**: Analyzes and enhances user ideas
+- **Title Generator**: Creates compelling app names
+- **Feature Analyzer**: Breaks down requirements
+- **Code Generator**: Produces production-ready React/Next.js code
+- **Error Recovery**: Ensures code quality and fixes issues
+- **Preview Generator**: Creates live, interactive previews
 
-**Phase 1: Foundation & Setup** - ✅ **COMPLETED**
+### 🔐 Authentication & Security
+- Google OAuth integration via Supabase
+- Protected routes with middleware
+- Row-level security (RLS) for data isolation
+- User session management
 
-See `TASKS.md` for detailed task tracking and progress updates.
+### 📊 Project Management
+- Dashboard with real-time statistics
+- Project grid with glass morphism UI
+- Individual project tracking per user
+- Status monitoring (generating → ready → deployed)
 
-### 🎨 Glass Design System
+### 🎨 Modern UI/UX
+- Apple-inspired design language
+- Glass morphism effects throughout
+- Light/Dark theme support
+- Mobile-responsive layout
+- Real-time workflow visualization
 
-Our custom glass morphism design system includes:
+## 🛠 Tech Stack
 
-- **Custom Tailwind Tokens**: Glass opacity variants, backdrop blur utilities, and custom animations
-- **Glass Components**: Reusable React components with TypeScript support
-- **Responsive Design**: Mobile-first approach with Apple-like clean aesthetics
-- **Accessibility**: ARIA labels and keyboard navigation support
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend**: Node.js, Next.js API Routes
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth with Google OAuth
+- **AI**: OpenAI GPT-4, Anthropic Claude
+- **Deployment**: Vercel-ready
 
-### 🏗️ Architecture
+## 🏗 Architecture
 
+### Database Schema
+```sql
+-- Core tables
+public.projects        -- User projects with metadata
+public.project_files   -- Generated code files
+public.user_stats      -- Dashboard statistics
+
+-- Automatic triggers for stats updates
+-- RLS policies for data security
 ```
-src/
-├── app/                    # Next.js 14 App Router
-│   ├── layout.tsx         # Root layout with glass background
-│   ├── page.tsx           # Landing page with glass components
-│   └── globals.css        # Global styles
-├── components/
-│   └── glass/             # Glass morphism component system
-│       ├── types.ts       # TypeScript interfaces
-│       ├── utils.ts       # Utility functions for glass styles
-│       ├── GlassCard.tsx  # Glass card component
-│       ├── GlassButton.tsx # Glass button component
-│       ├── GlassInput.tsx # Glass input components
-│       └── index.ts       # Component exports
-└── lib/
-    └── supabase.ts        # Supabase client configuration
-```
 
-## 🛠️ Setup & Development
+### Multi-Agent System
+1. **User Input** → **Enthusiasm Agent** (idea enhancement)
+2. **Title Generator** (app naming)
+3. **Feature Analyzer** (requirement breakdown)  
+4. **Code Generator** (React/Next.js components)
+5. **Error Recovery** (code validation & fixes)
+6. **Preview Generator** (live app deployment)
+
+## 🚀 Quick Start
 
 ### Prerequisites
+- Node.js 18+
+- Supabase account
+- OpenAI API key
+- Anthropic API key (optional)
 
-- Node.js 18+ and npm
-- Python 3.8+ with virtual environment
+### Environment Setup
+```bash
+# Clone repository
+git clone <repository-url>
+cd voltaic
 
-### Installation
+# Install dependencies
+npm install
 
-1. **Clone and setup the project:**
-   ```bash
-   git clone <your-repo-url>
-   cd Voltaic
-   ```
-
-2. **Activate virtual environment:**
-   ```bash
-   source .venv/bin/activate  # On macOS/Linux
-   # or
-   .venv\Scripts\activate     # On Windows
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-4. **Environment setup:**
-   ```bash
-   cp env.example .env.local
-   # Update .env.local with your actual API keys
-   ```
-
-5. **Start development server:**
-   ```bash
-   # Option 1: Regular start
-   npm run dev
-   
-   # Option 2: Clean start (kills ports 3000-3010 and starts fresh)
-   npm run dev:clean
-   ```
-
-6. **Open your browser:**
-   ```
-   http://localhost:3000
-   ```
+# Configure environment
+cp .env.example .env.local
+```
 
 ### Environment Variables
-
-Required environment variables in `.env.local`:
-
 ```env
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# AI Configuration (for future phases)
-OPENAI_API_KEY=your_openai_api_key
-ANTHROPIC_API_KEY=your_anthropic_api_key
+# AI Configuration
+NEXT_PUBLIC_OPENAI_API_KEY=your_openai_api_key
+NEXT_PUBLIC_ANTHROPIC_API_KEY=your_anthropic_api_key
 
-# NextAuth Configuration (for future phases)
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_nextauth_secret
+# Optional: Force build previews
+VOLTAIC_FORCE_BUILD_PREVIEW=false
 ```
 
-## 🎯 Next Steps (Phase 2)
+### Database Setup
+```bash
+# Run migrations in Supabase SQL Editor
+# Copy and execute: supabase/migrations/001_initial_schema.sql
+```
 
-### Priority Tasks:
-- **TASK-016 → TASK-023**: Authentication system with Supabase Auth
-- **TASK-031 → TASK-037**: User dashboard with glass components
-- **TASK-038 → TASK-044**: Project management interface
+### Development
+```bash
+npm run dev
+# Open http://localhost:3000
+```
+
+## 📱 Usage Flow
+
+### 1. Authentication
+- Navigate to the homepage
+- Click "Get Started" or "Sign In"
+- Authenticate with Google OAuth
+- Redirected to dashboard
+
+### 2. Create Project
+- Dashboard → "Create New MVP"
+- Enter your app idea (e.g., "A task management app with team collaboration")
+- Watch the multi-agent workflow in real-time
+- Get a fully functional preview
+
+### 3. Manage Projects  
+- Dashboard → "My Projects"
+- View all generated applications
+- Open live previews
+- Track project status
+
+## 🎯 Hackathon Highlights
+
+### Innovation
+- **Real-time AI Workflow Visualization**: Watch agents work step-by-step
+- **Intelligent Code Generation**: Context-aware React component creation
+- **Automatic Error Recovery**: Self-healing code generation
+- **Live Preview Generation**: Instant app deployment
+
+### User Experience
+- **Glass Morphism Design**: Modern, Apple-inspired interface
+- **Seamless Authentication**: One-click Google sign-in
+- **Responsive Design**: Perfect on all devices
+- **Real-time Feedback**: Live progress indicators
+
+### Technical Excellence
+- **Multi-Agent Architecture**: Specialized AI agents for different tasks
+- **Database Integration**: Full CRUD with Supabase
+- **Security First**: RLS policies and protected routes
+- **Scalable Architecture**: Production-ready codebase
+
+## 🔮 Generated Apps Include
+
+- **Landing Pages**: Hero sections, feature showcases, CTAs
+- **Dashboards**: Data visualization, user management
+- **E-commerce**: Product catalogs, shopping carts
+- **SaaS Tools**: User authentication, subscription management
+- **Portfolio Sites**: Project showcases, contact forms
+
+## 🏆 Competitive Advantages
+
+1. **Speed**: From idea to deployed app in under 2 minutes
+2. **Quality**: Production-ready React/Next.js code
+3. **Intelligence**: Context-aware AI agents that understand requirements
+4. **Scalability**: Multi-user platform with proper data isolation
+5. **User Experience**: Intuitive workflow with real-time feedback
 
 ## 🎨 Design Philosophy
 
-- **Minimalist & Clean**: Apple-like design principles
-- **Glass Morphism**: Modern UI with glassmorphism effects
-- **Mobile Responsive**: Mobile-first approach
-- **Better UX**: Prioritizing user experience over flashy features
-- **Accessibility**: WCAG compliant components
+- **Minimalist**: Clean, uncluttered interfaces
+- **Glass Morphism**: Modern visual effects with depth
+- **Apple-Inspired**: Familiar and intuitive interactions
+- **Mobile-First**: Responsive design for all devices
+- **Dark Theme**: Reduced eye strain, modern aesthetic
 
-## 🔧 Available Scripts
+## 🔧 API Endpoints
 
-```bash
-npm run dev          # Start development server
-npm run dev:clean    # Clean start (kills ports 3000-3010 & starts fresh)
-npm run debug        # Run comprehensive diagnostic tool
-npm run kill-ports   # Kill all processes on ports 3000-3010
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
+```typescript
+// Authentication
+GET  /auth/callback          // OAuth callback
+POST /auth/signin           // Sign in page
+
+// Projects
+GET  /api/projects          // List user projects  
+POST /api/projects          // Create new project
+
+// AI Generation
+POST /api/write-files       // Save generated files
+POST /api/preview/build     // Build live preview
+GET  /api/preview/:id       // View project preview
 ```
 
-## 🚨 Troubleshooting
+## 📊 Database Schema
 
-### Quick Diagnostic
-```bash
-npm run debug  # Checks ports, processes, environment, and build files
+```sql
+projects (
+  id, user_id, name, description,
+  project_type, status, preview_url,
+  workflow_id, ai_generations, created_at
+)
+
+project_files (
+  id, project_id, file_path, file_content,
+  file_type, description, created_at
+)
+
+user_stats (
+  id, user_id, projects_created,
+  mvps_deployed, ai_generations, created_at
+)
 ```
 
-### Common Issues
+## 🚀 Production Deployment
 
-**Port conflicts or webpack errors:**
+### Build Configuration
 ```bash
-npm run kill-ports && npm run dev:clean
+# Clean build (excludes generated-apps folder)
+npm run build
+
+# Memory optimization for large projects
+NODE_OPTIONS="--max-old-space-size=8192" npm run build
 ```
 
-**Build/cache issues:**
+### Git Configuration
+The project is configured to exclude:
+- `generated-apps/` folder (local development only)
+- Most `.md` files except `README.md` and `PRD.md`
+- Build artifacts and dependencies
+
+### Vercel Deployment
 ```bash
-rm -rf .next && npm run dev:clean
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel --prod
 ```
 
-**Emergency recovery:**
-```bash
-pkill -f "next" && rm -rf .next && npm run dev:clean
+## 🎯 Performance Optimizations
+
+- **Webpack Configuration**: Optimized chunk splitting for faster loads
+- **Build Exclusions**: Generated apps folder excluded from production build
+- **Memory Management**: Proper garbage collection for large codebases
+- **File Watching**: Intelligent file watching excludes temporary files
+
+## 🎮 Demo
+
+Visit the live demo: `https://your-app.vercel.app`
+
+1. Sign in with Google
+2. Try: "Create a recipe sharing app with ratings"
+3. Watch the AI workflow generate your app
+4. Get a live, shareable preview URL
+
+---
+
+**Built with ❤️ for the hackathon community**
+  workflow_id, created_at, updated_at
+)
+
+project_files (
+  id, project_id, file_path, file_content,
+  file_type, description, created_at
+)
+
+user_stats (
+  id, user_id, projects_created,
+  mvps_deployed, ai_generations
+)
 ```
 
-**For detailed troubleshooting:** See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+## 🚀 Deployment
 
-## 📱 Features
+```bash
+# Build for production
+npm run build
 
-### Current Features:
-- ✅ Stunning glass morphism landing page
-- ✅ Responsive design system
-- ✅ TypeScript support
-- ✅ Tailwind CSS with custom tokens
-- ✅ Framer Motion animations
-- ✅ Supabase integration ready
+# Deploy to Vercel
+vercel deploy
 
-### Planned Features:
-- 🔄 User authentication & profiles
-- 🔄 AI-powered MVP generation
-- 🔄 Real-time collaboration
-- 🔄 One-click deployment
-- 🔄 Project templates
-- 🔄 Code export functionality
+# Configure environment variables in Vercel dashboard
+```
 
 ## 🤝 Contributing
 
-This project follows the task-driven development approach outlined in `TASKS.md`. Please refer to the task list for current priorities and development guidelines.
+This is a hackathon submission, but we welcome feedback and contributions:
+
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
 
 ## 📄 License
 
 MIT License - see LICENSE file for details
 
+## 🎉 Acknowledgments
+
+- Built for [Hackathon Name]
+- Powered by OpenAI, Anthropic, and Supabase
+- Inspired by the future of AI-assisted development
+
 ---
 
-**Built with ❤️ by the Voltaic team**
+**Built with ❤️ by [Your Team]** | **"It all starts with an idea."**

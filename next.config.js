@@ -18,6 +18,20 @@ const nextConfig = {
             ]
         };
 
+        // Completely exclude generated-apps from webpack compilation
+        config.externals = config.externals || [];
+        if (typeof config.externals === 'function') {
+            const originalExternals = config.externals;
+            config.externals = (context, request, callback) => {
+                if (request.includes('generated-apps')) {
+                    return callback(null, 'commonjs ' + request);
+                }
+                return originalExternals(context, request, callback);
+            };
+        } else if (Array.isArray(config.externals)) {
+            config.externals.push(/^generated-apps/);
+        }
+
         // Only apply optimizations in production
         if (!dev && !isServer) {
             config.optimization = {

@@ -1,8 +1,10 @@
 'use client';
 
-import { Sparkles, Zap, Code, Rocket, ArrowRight, Github, Twitter, Menu } from 'lucide-react';
+import { Sparkles, Zap, Code, Rocket, ArrowRight, Github, Twitter, Menu, LogOut } from 'lucide-react';
 import { setupChunkErrorHandler } from '@/lib/chunk-error-handler';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   // Initialize chunk error handler
@@ -11,6 +13,31 @@ export default function Home() {
   }, []);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, signOut, loading } = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // User will stay on homepage after signing out
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const getUserInitial = () => {
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name[0].toUpperCase();
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const getUserDisplayName = () => {
+    return user?.user_metadata?.full_name || user?.email || 'User';
+  };
 
   const features = [
     {
@@ -54,14 +81,60 @@ export default function Home() {
                 <a href="#features" className="text-white/70 hover:text-white transition-colors">
                   Features
                 </a>
-                <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors">
-                  Sign In
-                </a>
-                <a href="/auth/signin">
-                  <button className="glass-button glass-button-primary px-4 py-2 text-sm">
-                    Get Started
-                  </button>
-                </a>
+
+                {!loading && (
+                  <>
+                    {user ? (
+                      // Authenticated user - show avatar and sign out
+                      <>
+                        <button
+                          onClick={() => router.push('/dashboard')}
+                          className="text-white/70 hover:text-white transition-colors"
+                        >
+                          Dashboard
+                        </button>
+
+                        {/* User Avatar and Info */}
+                        <div className="flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg">
+                          {user.user_metadata?.avatar_url ? (
+                            <img
+                              src={user.user_metadata.avatar_url}
+                              alt="Profile"
+                              className="w-5 h-5 rounded-full border border-white/20"
+                            />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs border border-white/20">
+                              {getUserInitial()}
+                            </div>
+                          )}
+                          <span className="text-sm text-gray-300 truncate max-w-[150px]">
+                            {getUserDisplayName()}
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center justify-center w-9 h-9 text-white/70 hover:text-white hover:bg-red-500/20 rounded-lg border border-white/20 hover:border-red-400/30 transition-all duration-200"
+                          title="Sign out"
+                        >
+                          <LogOut className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      // Non-authenticated user - show sign in options
+                      <>
+                        <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors">
+                          Sign In
+                        </a>
+                        <a href="/auth/signin">
+                          <button className="glass-button glass-button-primary px-4 py-2 text-sm">
+                            Get Started
+                          </button>
+                        </a>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Mobile Menu Button */}
@@ -80,14 +153,60 @@ export default function Home() {
                   <a href="#features" className="text-white/70 hover:text-white transition-colors py-2">
                     Features
                   </a>
-                  <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors py-2">
-                    Sign In
-                  </a>
-                  <a href="/auth/signin">
-                    <button className="glass-button glass-button-primary px-4 py-2 text-sm mt-2">
-                      Get Started
-                    </button>
-                  </a>
+
+                  {!loading && (
+                    <>
+                      {user ? (
+                        // Authenticated user mobile menu
+                        <>
+                          <button
+                            onClick={() => router.push('/dashboard')}
+                            className="text-white/70 hover:text-white transition-colors py-2 text-left"
+                          >
+                            Dashboard
+                          </button>
+
+                          {/* Mobile User Info */}
+                          <div className="flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg">
+                            {user.user_metadata?.avatar_url ? (
+                              <img
+                                src={user.user_metadata.avatar_url}
+                                alt="Profile"
+                                className="w-5 h-5 rounded-full border border-white/20"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs border border-white/20">
+                                {getUserInitial()}
+                              </div>
+                            )}
+                            <span className="text-sm text-gray-300 truncate">
+                              {getUserDisplayName()}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={handleSignOut}
+                            className="flex items-center justify-center w-9 h-9 text-white/70 hover:text-white hover:bg-red-500/20 rounded-lg border border-white/20 hover:border-red-400/30 transition-all duration-200"
+                            title="Sign out"
+                          >
+                            <LogOut className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        // Non-authenticated user mobile menu
+                        <>
+                          <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors py-2">
+                            Sign In
+                          </a>
+                          <a href="/auth/signin">
+                            <button className="glass-button glass-button-primary px-4 py-2 text-sm mt-2">
+                              Get Started
+                            </button>
+                          </a>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             )}
