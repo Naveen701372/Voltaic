@@ -320,7 +320,9 @@ export default function RootLayout({
         await fs.writeFile(path.join(projectPath, 'src/app/layout.tsx'), layout);
 
         // Create page.tsx with the provided React component
-        const page = `import React from 'react';
+        const page = `"use client";
+
+import React from 'react';
 
 ${reactComponent}
 

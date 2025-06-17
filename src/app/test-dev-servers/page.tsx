@@ -135,8 +135,155 @@ const EXAMPLE_REACT_COMPONENTS = {
         <button onClick={clearAll} className="col-span-2 bg-red-500 text-white hover:bg-red-600 h-16 rounded-lg">
           Clear
         </button>
-        <button className="bg-gray-200 hover:bg-gray-300 h-16 rounded-lg">7</button>
-        <button className="bg-gray-200 hover:bg-gray-300 h-16 rounded-lg">8</button>
+        <button onClick={() => inputNumber(7)} className="bg-gray-200 hover:bg-gray-300 h-16 rounded-lg">7</button>
+        <button onClick={() => inputNumber(8)} className="bg-gray-200 hover:bg-gray-300 h-16 rounded-lg">8</button>
+      </div>
+    </div>
+  );
+}`,
+
+    dashboard: `function App() {
+  const [stats, setStats] = React.useState({
+    users: 1250,
+    revenue: 45780,
+    orders: 892,
+    growth: 23.5
+  });
+  
+  const [activeTab, setActiveTab] = React.useState('overview');
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto mt-8 p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-300 rounded mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-300 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto mt-8 p-6">
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Analytics Dashboard</h1>
+      
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+          <div className="text-2xl font-bold text-blue-600">{stats.users.toLocaleString()}</div>
+          <div className="text-gray-600">Total Users</div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+          <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.revenue)}</div>
+          <div className="text-gray-600">Revenue</div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
+          <div className="text-2xl font-bold text-purple-600">{stats.orders}</div>
+          <div className="text-gray-600">Orders</div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-500">
+          <div className="text-2xl font-bold text-orange-600">+{stats.growth}%</div>
+          <div className="text-gray-600">Growth</div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8 px-6">
+            {['overview', 'analytics', 'reports'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={\`py-4 px-1 border-b-2 font-medium text-sm capitalize \${
+                  activeTab === tab
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }\`}
+              >
+                {tab}
+              </button>
+            ))}
+          </nav>
+        </div>
+        
+        <div className="p-6">
+          {activeTab === 'overview' && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Overview</h3>
+              <p className="text-gray-600 mb-4">Welcome to your dashboard! Here's a quick overview of your key metrics.</p>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="font-medium text-blue-800">💡 Pro Tip</div>
+                <div className="text-blue-700">Your user growth is up {stats.growth}% this month!</div>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'analytics' && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Analytics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">User Engagement</h4>
+                  <div className="text-3xl font-bold text-green-600">87%</div>
+                  <div className="text-sm text-gray-600">Average session time: 4m 32s</div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Conversion Rate</h4>
+                  <div className="text-3xl font-bold text-blue-600">12.4%</div>
+                  <div className="text-sm text-gray-600">Up 2.1% from last month</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'reports' && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Reports</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <div className="font-medium">Monthly Revenue Report</div>
+                    <div className="text-sm text-gray-600">Generated today</div>
+                  </div>
+                  <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Download
+                  </button>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <div className="font-medium">User Activity Report</div>
+                    <div className="text-sm text-gray-600">Generated yesterday</div>
+                  </div>
+                  <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Download
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -445,8 +592,9 @@ export default function TestDevServersPage() {
                                         onChange={(e) => setSelectedComponent(e.target.value)}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-800"
                                     >
-                                        <option value="todoApp">📝 Todo App</option>
-                                        <option value="calculator">🧮 Calculator</option>
+                                        <option value="todoApp">📝 Todo App (Interactive)</option>
+                                        <option value="calculator">🧮 Calculator (Math)</option>
+                                        <option value="dashboard">📊 Dashboard (Complex UI)</option>
                                     </select>
                                 </div>
 
