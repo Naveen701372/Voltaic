@@ -41,3 +41,8 @@ generated-apps/*
 !generated-apps/.gitkeep
 *.md
 !README.md
+
+# Development server projects (ignore content but keep directory)
+voltaic-dev-servers/*
+!voltaic-dev-servers/.gitkeep
+/tmp/voltaic-dev-servers/
