@@ -10,6 +10,7 @@
     "kill-ports": "./scripts/kill-ports.sh",
     "debug": "./scripts/debug-ports.sh",
     "build": "next build",
+    "build:ignore-generated": "NEXT_IGNORE_GENERATED=true next build",
     "start": "next start",
     "lint": "next lint"
   },
