@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { GlassCard } from '@/components/glass/GlassCard';
 import { GlassButton } from '@/components/glass/GlassButton';
+import { AppHeader } from '@/components/AppHeader';
 
 export default function Dashboard() {
     const { user, loading, signOut } = useAuth();
@@ -44,6 +45,13 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+            {/* AppHeader */}
+            <AppHeader
+                title="Dashboard"
+                subtitle={`Welcome back, ${user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}!`}
+                logoDestination="dashboard"
+            />
+
             {/* Background Effects */}
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20" />
             <div className="absolute inset-0 overflow-hidden">
@@ -55,25 +63,7 @@ export default function Dashboard() {
             </div>
 
             {/* Content */}
-            <div className="relative z-10 container mx-auto px-4 py-8">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-4xl font-bold text-white mb-2">
-                            Welcome to Voltaic
-                        </h1>
-                        <p className="text-gray-300">
-                            Hello, {user.user_metadata?.full_name || user.email}!
-                        </p>
-                    </div>
-                    <GlassButton
-                        onClick={handleSignOut}
-                        variant="dark"
-                        className="px-6 py-3"
-                    >
-                        Sign Out
-                    </GlassButton>
-                </div>
+            <div className="relative z-10 container mx-auto px-4 py-8 pt-32 lg:pt-24">{/* Added top padding to account for AppHeader */}
 
                 {/* Dashboard Content */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
