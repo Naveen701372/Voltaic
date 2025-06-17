@@ -49,7 +49,7 @@ export default function Dashboard() {
             <AppHeader
                 title="Dashboard"
                 subtitle={`Welcome back, ${user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}!`}
-                logoDestination="dashboard"
+                logoDestination="home"
             />
 
             {/* Background Effects */}
