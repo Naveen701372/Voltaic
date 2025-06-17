@@ -207,6 +207,12 @@ export class ProductionDevServerManager {
                 mainComponent = mainComponent.replace(/export\s+function\s+(\w+)/, 'function $1');
                 mainComponent = mainComponent.replace(/import\s+['"].*\.css['"];?\n?/g, '');
 
+                // Log component detection on server side
+                const mainComponentMatch = mainComponent.match(/function\s+(\w+)/) || mainComponent.match(/const\s+(\w+)\s*=/);
+                if (mainComponentMatch) {
+                    serverInfo.logs.push(`[${new Date().toISOString()}] Found main component: ${mainComponentMatch[1]}`);
+                }
+
                 // Create HTML content and store it directly
                 const htmlContent = `<!DOCTYPE html>
 <html lang="en">
@@ -286,7 +292,7 @@ export class ProductionDevServerManager {
         };
 
         const mainComponentName = extractMainComponent(\`${mainComponent}\`);
-        serverInfo.logs.push(\`[DEBUG] Found main component: \${mainComponentName}\`);
+        console.log('Found main component:', mainComponentName);
         
         // If no component was found, create a default one
         if (mainComponentName === 'DefaultApp') {
