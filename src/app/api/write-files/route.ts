@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { ProductionFileManager } from '@/lib/production-file-manager';
+import { getEnvironmentDebugInfo } from '@/lib/environment';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,18 +13,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Debug environment variables for Vercel troubleshooting
+    // Get comprehensive environment information for debugging
+    const debugInfo = getEnvironmentDebugInfo();
     console.log('🔍 Environment Debug:', {
-      NODE_ENV: process.env.NODE_ENV,
-      VERCEL: process.env.VERCEL,
-      VERCEL_ENV: process.env.VERCEL_ENV,
-      VERCEL_URL: process.env.VERCEL_URL,
-      NETLIFY: process.env.NETLIFY,
-      AWS_LAMBDA_FUNCTION_NAME: process.env.AWS_LAMBDA_FUNCTION_NAME,
-      PWD: process.env.PWD,
-      CWD: process.cwd(),
-      LAMBDA_TASK_ROOT: process.env.LAMBDA_TASK_ROOT,
-      AWS_EXECUTION_ENV: process.env.AWS_EXECUTION_ENV
+      platform: debugInfo.environment.platform,
+      isProduction: debugInfo.environment.isProduction,
+      workingDirectory: debugInfo.environment.workingDirectory,
+      canWriteFiles: debugInfo.environment.canWriteFiles,
+      detectionReasons: debugInfo.environment.detectionReasons
     });
 
     // Debug request data
@@ -37,226 +33,60 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString()
     });
 
-    // Check if we're in production environment (multiple checks for different platforms)
-    const isProduction =
-      process.env.NODE_ENV === 'production' ||
-      process.env.VERCEL === '1' ||
-      process.env.VERCEL_ENV === 'production' ||
-      process.env.NETLIFY === 'true' ||
-      process.env.AWS_LAMBDA_FUNCTION_NAME || // AWS Lambda
-      process.cwd().includes('/var/task') || // Vercel Lambda working directory
-      process.cwd().includes('/.vercel/') || // Vercel local development
-      !process.env.NODE_ENV; // Default to production if NODE_ENV is not set
+    // Use ProductionFileManager for all file operations
+    const fileManager = new ProductionFileManager();
+    const result = await fileManager.createProject(projectId, title, files);
 
-    console.log(`🎯 Production Detection Result: ${isProduction}`);
-
-    if (isProduction) {
-      // In production, we can't write files to disk
-      // Return success but indicate that files are stored in memory only
-      console.log(`🚀 Production environment detected - skipping file writing for project ${projectId}`);
-
-      // Debug projectId value in production
-      console.log('🆔 ProjectId Debug:', {
-        projectId,
-        type: typeof projectId,
-        length: projectId?.length,
-        startsWith_workflow: projectId?.startsWith?.('workflow_'),
-        raw: JSON.stringify(projectId)
+    // Enhanced logging based on mode
+    if (result.success) {
+      console.log(`✅ Project created successfully:`, {
+        mode: result.mode,
+        projectDir: result.projectDir,
+        filesWritten: result.filesWritten,
+        isEphemeral: result.isEphemeral,
+        storageUsed: result.storageUsed
       });
-
-      return NextResponse.json({
-        success: true,
-        projectDir: `/var/task/generated-apps/${projectId}`, // Virtual path matching actual Vercel environment
-        filesWritten: files.length,
-        filesList: files.map(f => f.path),
-        mode: 'memory', // Indicate this is memory-only
-        message: 'Files stored in memory for production environment - no file system operations performed',
-        debug: {
-          projectId,
-          isProduction: true,
-          detectionReason: 'Multiple production indicators detected',
-          actualWorkingDir: process.cwd()
-        }
+    } else {
+      console.error(`❌ Project creation failed:`, {
+        mode: result.mode,
+        error: result.error,
+        projectDir: result.projectDir
       });
     }
 
-    // Development environment - continue with file operations
-    const projectDir = path.join(process.cwd(), 'generated-apps', projectId);
-    await fs.mkdir(projectDir, { recursive: true });
-
-    // Create src directory
-    const srcDir = path.join(projectDir, 'src');
-    await fs.mkdir(srcDir, { recursive: true });
-
-    // Create app directory
-    const appDir = path.join(srcDir, 'app');
-    await fs.mkdir(appDir, { recursive: true });
-
-    // Create components directory
-    const componentsDir = path.join(srcDir, 'components');
-    await fs.mkdir(componentsDir, { recursive: true });
-
-    // Write each file
-    for (const file of files) {
-      // Remove src/ prefix from file.path since we're already in the src directory
-      const relativePath = file.path.startsWith('src/') ? file.path.replace('src/', '') : file.path;
-      const filePath = path.join(srcDir, relativePath);
-      const fileDir = path.dirname(filePath);
-
-      console.log(`📁 Writing file: ${file.path} -> ${filePath}`);
-      console.log(`📁 Directory: ${fileDir}`);
-
-      // Ensure directory exists
-      await fs.mkdir(fileDir, { recursive: true });
-
-      // Write file content
-      await fs.writeFile(filePath, file.content, 'utf8');
-      console.log(`✅ File written successfully: ${filePath}`);
-    }
-
-    // Create package.json for the project
-    const packageJson = {
-      name: projectId,
-      version: '0.1.0',
-      private: true,
-      scripts: {
-        dev: 'next dev -p 3003',
-        build: 'next build',
-        start: 'next start',
-        lint: 'next lint'
-      },
-      dependencies: {
-        react: '^18',
-        'react-dom': '^18',
-        next: '14.0.4',
-        'lucide-react': '^0.263.1'
-      },
-      devDependencies: {
-        typescript: '^5',
-        '@types/node': '^20',
-        '@types/react': '^18',
-        '@types/react-dom': '^18',
-        autoprefixer: '^10.0.1',
-        postcss: '^8',
-        tailwindcss: '^3.3.0'
-      }
-    };
-
-    await fs.writeFile(
-      path.join(projectDir, 'package.json'),
-      JSON.stringify(packageJson, null, 2),
-      'utf8'
-    );
-
-    // Skip creating tailwind.config.js and next.config.js - they're not needed for the preview
-
-    // Create globals.css
-    const globalsCss = `@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer components {
-  .glass-primary {
-    backdrop-filter: blur(16px) saturate(180%);
-    background-color: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 12px;
-  }
-  
-  .glass-dark {
-    backdrop-filter: blur(16px) saturate(180%);
-    background-color: rgba(17, 25, 40, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.125);
-    border-radius: 12px;
-  }
-
-  .glass-button {
-    backdrop-filter: blur(10px);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 8px;
-    transition: all 0.3s ease;
-  }
-
-  .glass-button:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
-    transform: translateY(-1px);
-  }
-
-  @keyframes blob {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.9); }
-    100% { transform: translate(0px, 0px) scale(1); }
-  }
-
-  .animate-blob {
-    animation: blob 7s infinite;
-  }
-
-  .animation-delay-2000 {
-    animation-delay: 2s;
-  }
-}`;
-
-    await fs.writeFile(
-      path.join(srcDir, 'app', 'globals.css'),
-      globalsCss,
-      'utf8'
-    );
-
-    // Create layout.tsx
-    const layoutTsx = `import './globals.css'
-import { Inter } from 'next/font/google'
-
-const inter = Inter({ subsets: ['latin'] })
-
-export const metadata = {
-  title: '${title}',
-  description: 'Generated by Voltaic AI',
-}
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
-    </html>
-  )
-}`;
-
-    await fs.writeFile(
-      path.join(srcDir, 'app', 'layout.tsx'),
-      layoutTsx,
-      'utf8'
-    );
-
-    console.log(`Successfully wrote ${files.length} files to ${projectDir}`);
-    console.log(`📋 Files written summary:`);
-    for (const file of files) {
-      const relativePath = file.path.startsWith('src/') ? file.path.replace('src/', '') : file.path;
-      const finalPath = path.join(srcDir, relativePath);
-      console.log(`  ✅ ${file.path} -> ${finalPath}`);
-    }
-
+    // Return comprehensive response
     return NextResponse.json({
-      success: true,
-      projectDir,
-      filesWritten: files.length,
-      filesList: files.map(f => f.path)
+      success: result.success,
+      projectDir: result.projectDir,
+      filesWritten: result.filesWritten,
+      filesList: files.map(f => f.path),
+      mode: result.mode,
+      isEphemeral: result.isEphemeral,
+      message: result.message,
+      storageUsed: result.storageUsed,
+      debug: {
+        projectId,
+        title,
+        environment: {
+          platform: debugInfo.environment.platform,
+          isProduction: debugInfo.environment.isProduction,
+          workingDirectory: debugInfo.environment.workingDirectory,
+          detectionReasons: debugInfo.environment.detectionReasons
+        },
+        capabilities: debugInfo.capabilities,
+        timestamp: new Date().toISOString()
+      },
+      error: result.error
     });
 
   } catch (error) {
-    console.error('File writing error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    console.error('❌ Write-files API error:', error);
+
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      message: 'Failed to process file writing request',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 } 
