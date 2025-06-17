@@ -5,31 +5,46 @@ import { detectEnvironment } from '@/lib/environment';
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { projectId, reactComponent, projectTitle } = body;
+        const { projectId, reactComponent, projectTitle, quickMode = false } = body;
 
         if (!projectId || !reactComponent) {
-            return NextResponse.json({
-                success: false,
-                error: 'Missing required fields: projectId, reactComponent'
-            }, { status: 400 });
+            return NextResponse.json(
+                { success: false, error: 'Missing required fields: projectId, reactComponent' },
+                { status: 400 }
+            );
         }
 
         const manager = ProductionDevServerManager.getInstance();
         const result = await manager.createAndStartDevServer(
             projectId,
             reactComponent,
-            projectTitle || 'Voltaic Generated App'
+            projectTitle || 'Voltaic Generated App',
+            quickMode
         );
 
-        return NextResponse.json(result);
-
+        if (result.success) {
+            return NextResponse.json({
+                success: true,
+                port: result.port,
+                url: result.url,
+                projectPath: result.projectPath,
+                logs: result.logs
+            });
+        } else {
+            return NextResponse.json(
+                { success: false, error: result.error, logs: result.logs },
+                { status: 500 }
+            );
+        }
     } catch (error) {
         console.error('Dev server start error:', error);
-        return NextResponse.json({
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            details: process.env.NODE_ENV === 'development' ? String(error) : undefined
-        }, { status: 500 });
+        return NextResponse.json(
+            {
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error occurred'
+            },
+            { status: 500 }
+        );
     }
 }
 

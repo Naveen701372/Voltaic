@@ -299,6 +299,7 @@ export default function TestDevServersPage() {
     const [customProjectId, setCustomProjectId] = useState('');
     const [customProjectTitle, setCustomProjectTitle] = useState('');
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
+    const [quickMode, setQuickMode] = useState(true);
     const [logs, setLogs] = useState<string[]>([]);
     const [logStatus, setLogStatus] = useState<string>('');
     const [buildProgress, setBuildProgress] = useState<string>('');
@@ -381,7 +382,7 @@ export default function TestDevServersPage() {
         setIsLoading(true);
 
         try {
-            const projectId = customProjectId || 'dev-test-' + Date.now();
+            const projectId = customProjectId || 'test-' + Date.now().toString().slice(-5);
             const projectTitle = customProjectTitle || 'Development Server Test';
             const reactComponent = EXAMPLE_REACT_COMPONENTS[selectedComponent as keyof typeof EXAMPLE_REACT_COMPONENTS];
 
@@ -391,7 +392,8 @@ export default function TestDevServersPage() {
                 body: JSON.stringify({
                     projectId,
                     reactComponent,
-                    projectTitle
+                    projectTitle,
+                    quickMode
                 })
             });
 
@@ -613,6 +615,30 @@ export default function TestDevServersPage() {
                                         placeholder="Project Title (optional)"
                                         className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-800"
                                     />
+                                </div>
+
+                                {/* Quick Mode Toggle */}
+                                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <div>
+                                        <label className="block text-sm font-medium text-blue-800">
+                                            ⚡ Quick Preview Mode
+                                        </label>
+                                        <p className="text-xs text-blue-600 mt-1">
+                                            {quickMode
+                                                ? 'Fast HTML preview (< 10s) - Recommended for production testing'
+                                                : 'Full Next.js build (60s+ timeout risk) - Use for local testing'
+                                            }
+                                        </p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={quickMode}
+                                            onChange={(e) => setQuickMode(e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
                                 </div>
 
                                 <button

@@ -1,6 +1,6 @@
-import { spawn, ChildProcess } from 'child_process';
-import { promises as fs } from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
+import { spawn, ChildProcess } from 'child_process';
 import { detectEnvironment } from './environment';
 import { logger } from './logger';
 
@@ -27,16 +27,20 @@ export interface DevServerResult {
     serverInfo?: DevServerInfo;
 }
 
+/**
+ * Production Development Server Manager
+ * Handles creation and management of live Next.js development servers in production environment
+ */
 export class ProductionDevServerManager {
     private static instance: ProductionDevServerManager;
     private runningServers: Map<string, DevServerInfo> = new Map();
     private allocatedPorts: Set<number> = new Set();
     private environment = detectEnvironment();
 
-    // Port range for production (avoid conflicts with main app)
+    // Port configuration for production vs local
     private portRange = {
-        min: parseInt(process.env.VOLTAIC_DEV_SERVER_PORT_MIN || '4000'),
-        max: parseInt(process.env.VOLTAIC_DEV_SERVER_PORT_MAX || '4100')
+        min: this.environment.platform === 'vercel' ? 4000 : 3100,
+        max: this.environment.platform === 'vercel' ? 4100 : 3200
     };
 
     private constructor() {
@@ -51,12 +55,13 @@ export class ProductionDevServerManager {
     }
 
     /**
-     * Create a complete Next.js project and start dev server
+     * Create and start a new development server
      */
     async createAndStartDevServer(
         projectId: string,
         reactComponent: string,
-        projectTitle: string = 'Voltaic Generated App'
+        projectTitle: string = 'Voltaic Generated App',
+        quickMode: boolean = false
     ): Promise<DevServerResult> {
         const startTime = Date.now();
         let port: number | undefined;
@@ -64,35 +69,44 @@ export class ProductionDevServerManager {
         try {
             logger.info('production-dev', `Starting dev server creation for ${projectId}`, { projectId });
 
-            // Step 1: Create project structure
-            const projectPath = await this.createProjectStructure(projectId, reactComponent, projectTitle);
-
-            // Step 2: Find available port
+            // Find available port
             port = await this.findAvailablePort();
+            this.allocatedPorts.add(port);
+
+            // Create project structure
+            const projectPath = await this.createProjectStructure(projectId, reactComponent, projectTitle, quickMode);
 
             // Create server info
             const serverInfo: DevServerInfo = {
                 projectId,
-                pid: null,
                 port,
                 projectPath,
                 startTime,
                 status: 'starting',
-                logs: [`[${new Date().toISOString()}] Starting project creation...`],
+                logs: [],
+                pid: null,
                 url: `http://localhost:${port}`
             };
 
             this.runningServers.set(projectId, serverInfo);
-            this.allocatedPorts.add(port);
 
-            // Step 3: Install dependencies
-            await this.installDependencies(serverInfo);
+            if (quickMode) {
+                // Quick mode: Skip npm install, use minimal setup
+                logger.info('production-dev', `Quick mode: Skipping npm install for ${projectId}`);
+                serverInfo.logs.push(`[${new Date().toISOString()}] Quick Preview Mode - Skipping dependency installation`);
 
-            // Step 4: Start dev server
-            await this.startDevServer(serverInfo);
+                // Try to start a simple static server instead
+                await this.startQuickPreviewServer(serverInfo, reactComponent, projectTitle);
+            } else {
+                // Full mode: Install dependencies
+                await this.installDependencies(serverInfo);
 
-            // Step 5: Wait for server to be ready
-            await this.waitForServerReady(serverInfo);
+                // Start Next.js dev server
+                await this.startDevServer(serverInfo);
+
+                // Wait for server to be ready
+                await this.waitForServerReady(serverInfo);
+            }
 
             logger.info('production-dev', `Dev server started successfully`, {
                 projectId,
@@ -128,12 +142,98 @@ export class ProductionDevServerManager {
     }
 
     /**
+     * Start a quick preview server without full Next.js setup
+     */
+    private async startQuickPreviewServer(
+        serverInfo: DevServerInfo,
+        reactComponent: string,
+        projectTitle: string
+    ): Promise<void> {
+        return new Promise((resolve, reject) => {
+            serverInfo.status = 'building';
+            serverInfo.logs.push(`[${new Date().toISOString()}] Starting quick preview server on port ${serverInfo.port}...`);
+
+            // Create a simple HTML file with the React component
+            const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectTitle}</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px; z-index: 1000;">
+        Quick Preview Mode • Voltaic
+    </div>
+    <script type="text/babel">
+        ${reactComponent}
+        
+        function AppWrapper() {
+            return (
+                <div style={{
+                    minHeight: '100vh',
+                    background: 'linear-gradient(to bottom right, #eff6ff, #e0e7ff)',
+                    padding: '2rem'
+                }}>
+                    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem' }}>
+                            ${projectTitle}
+                        </h1>
+                        <p style={{ color: '#6b7280' }}>
+                            Generated by Voltaic • Quick Preview Mode
+                        </p>
+                    </div>
+                    <App />
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<AppWrapper />, document.getElementById('root'));
+    </script>
+</body>
+</html>`;
+
+            // Start a simple HTTP server
+            const http = require('http');
+            const server = http.createServer((req: any, res: any) => {
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end(htmlContent);
+            });
+
+            server.listen(serverInfo.port, () => {
+                serverInfo.status = 'running';
+                serverInfo.logs.push(`[${new Date().toISOString()}] Quick preview server ready at http://localhost:${serverInfo.port}`);
+                resolve();
+            });
+
+            server.on('error', (error: any) => {
+                const errorMsg = `Failed to start quick preview server: ${error.message}`;
+                serverInfo.logs.push(`[ERROR] ${errorMsg}`);
+                serverInfo.status = 'failed';
+                reject(new Error(errorMsg));
+            });
+
+            // Store server reference for cleanup
+            serverInfo.process = server as any;
+        });
+    }
+
+    /**
      * Create complete Next.js project structure in /tmp
      */
     private async createProjectStructure(
         projectId: string,
         reactComponent: string,
-        projectTitle: string
+        projectTitle: string,
+        quickMode: boolean = false
     ): Promise<string> {
         const baseDir = this.environment.writableDirectory || '/tmp';
         const projectPath = path.join(baseDir, 'voltaic-dev-servers', projectId);
