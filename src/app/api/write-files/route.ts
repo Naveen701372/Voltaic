@@ -2,6 +2,45 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ProductionFileManager } from '@/lib/production-file-manager';
 import { getEnvironmentDebugInfo } from '@/lib/environment';
 
+export async function GET(req: NextRequest) {
+  try {
+    const debugInfo = getEnvironmentDebugInfo();
+
+    return NextResponse.json({
+      endpoint: '/api/write-files',
+      method: 'GET',
+      environment: debugInfo.environment,
+      capabilities: debugInfo.capabilities,
+      usage: {
+        'POST /api/write-files': 'Write files using ProductionFileManager',
+        'GET /api/write-files': 'Get endpoint information and debug data'
+      },
+      requiredFields: {
+        projectId: 'string',
+        title: 'string (optional)',
+        files: 'array of { path: string, content: string, type?: string }'
+      },
+      example: {
+        projectId: 'my-test-app',
+        title: 'My Test Application',
+        files: [
+          {
+            path: 'src/app/page.tsx',
+            content: 'export default function HomePage() { return <div>Hello World</div>; }',
+            type: 'page'
+          }
+        ]
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { projectId, title, files } = await req.json();

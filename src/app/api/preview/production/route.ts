@@ -77,26 +77,50 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const projectId = searchParams.get('projectId');
 
-        if (!projectId) {
-            return NextResponse.json({
-                error: 'Project ID is required'
-            }, { status: 400 });
-        }
-
         // Get environment information for debugging
         const debugInfo = getEnvironmentDebugInfo();
 
-        return NextResponse.json({
-            projectId,
+        const response = {
+            endpoint: '/api/preview/production',
             environment: debugInfo.environment,
             capabilities: debugInfo.capabilities,
             message: 'Production preview endpoint ready',
             usage: {
                 'POST /api/preview/production': 'Create a new preview',
-                'GET /api/preview/production?projectId=<id>': 'Get preview information'
+                'GET /api/preview/production': 'Get endpoint information',
+                'GET /api/preview/production?projectId=<id>': 'Get preview information for specific project'
+            },
+            requiredFields: {
+                projectId: 'string',
+                title: 'string',
+                files: 'array of { path: string, content: string, type?: string }',
+                options: 'object (optional) - { mode?: "auto" | "static" | "template" | "build" }'
+            },
+            example: {
+                projectId: 'my-preview-app',
+                title: 'My Preview Application',
+                files: [
+                    {
+                        path: 'src/app/page.tsx',
+                        content: 'export default function HomePage() { return <div>Preview App</div>; }',
+                        type: 'page'
+                    }
+                ],
+                options: { mode: 'auto' }
             },
             timestamp: new Date().toISOString()
-        });
+        };
+
+        // If projectId is provided, add specific project information
+        if (projectId) {
+            (response as any).projectId = projectId;
+            (response as any).projectInfo = {
+                id: projectId,
+                message: 'Project-specific preview information would be shown here'
+            };
+        }
+
+        return NextResponse.json(response);
 
     } catch (error) {
         console.error('❌ Production preview GET error:', error);
