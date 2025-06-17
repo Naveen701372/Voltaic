@@ -112,7 +112,7 @@ export const useAgentStore = create<AgentStore>()(
             logger.info('AgentStore', `Creating workflow for idea: ${userIdea}`);
             const { orchestrator } = get();
             const workflow = orchestrator.createMVPGenerationWorkflow(userIdea);
-            logger.info('AgentStore', `Workflow steps: ${workflow.steps.map(s => s.name).join(', ')}`);
+            logger.info('AgentStore', `Workflow steps: ${workflow.steps.map((s: any) => s.name).join(', ')}`);
 
             set((prev) => ({
                 workflows: {
@@ -146,7 +146,7 @@ export const useAgentStore = create<AgentStore>()(
 
             try {
                 logger.info('AgentStore', 'Calling orchestrator.executeWorkflow...');
-                const result = await orchestrator.executeWorkflow(workflow, currentContext);
+                const result = await orchestrator.executeWorkflow(workflow);
                 logger.info('AgentStore', 'Orchestrator result received', { success: result.success, artifactCount: result.artifacts?.length || 0 });
 
                 if (result.success && result.artifacts) {
@@ -337,7 +337,7 @@ export const useAgentStore = create<AgentStore>()(
 const store = useAgentStore.getState();
 
 // Listen to orchestrator events
-store.orchestrator.addEventListener((event) => {
+store.orchestrator.addEventListener((event: any) => {
     store.addEvent(event);
 
     // Update UI based on events

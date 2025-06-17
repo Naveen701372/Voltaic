@@ -8,6 +8,10 @@ export interface Message {
     isStreaming?: boolean;
     agentType?: AgentType;
     agentStatus?: AgentStatus;
+    metadata?: {
+        workflow?: AgentWorkflow;
+        [key: string]: any;
+    };
 }
 
 export interface GeneratedFile {
@@ -33,9 +37,9 @@ export interface GenerationStep {
     description: string;
 }
 
-export type AgentType = 'enthusiasm' | 'analyzer' | 'title-generator' | 'coder' | 'preview';
+export type AgentType = 'enthusiasm' | 'analyzer' | 'title-generator' | 'coder' | 'error-recovery' | 'preview' | 'component-editor';
 
-export type AgentStatus = 'pending' | 'thinking' | 'working' | 'completed' | 'error';
+export type AgentStatus = 'pending' | 'thinking' | 'working' | 'completed' | 'error' | 'hidden';
 
 export interface AgentCard {
     id: string;
@@ -46,6 +50,10 @@ export interface AgentCard {
     output?: string;
     files?: GeneratedFile[];
     timestamp: Date;
+    progress?: number;
+    currentStep?: string;
+    streaming?: boolean;
+    duration?: number;
 }
 
 export interface AgentWorkflow {
@@ -55,6 +63,7 @@ export interface AgentWorkflow {
     currentAgentIndex: number;
     isComplete: boolean;
     previewUrl?: string;
+    enthusiasmOutput?: string;
     finalResult?: {
         title: string;
         files: GeneratedFile[];
