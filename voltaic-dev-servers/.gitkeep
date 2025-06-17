@@ -1,1 +1,3 @@
- 
+# This file ensures the voltaic-dev-servers directory exists in git
+# The directory is used for temporary development server projects
+# Content inside this directory (except this file) is ignored by git 

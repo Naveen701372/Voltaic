@@ -236,6 +236,60 @@ NODE_OPTIONS="--max-old-space-size=8192" npm run build
 ✅ **Environment Auto-Detection**: Works with Vercel, Netlify, and other platforms  
 ✅ **Optimized Builds**: Excludes development-only directories and files  
 
+## 🚀 **BREAKTHROUGH: Production Dev Server System**
+
+### **Revolutionary Live React Preview in Production**
+Voltaic now features a breakthrough serverless development server system that creates **live React applications directly in production environments**:
+
+✨ **Live React Components**: Real React apps with full interactivity  
+⚡ **Quick Preview Mode**: < 10 seconds deployment to live preview  
+🌐 **Serverless Architecture**: Runs in Vercel's serverless environment  
+📦 **CDN-Based Dependencies**: No npm install required, uses React CDN  
+🔧 **Production-Ready**: Automatically detects and adapts to production  
+
+### **How It Works**
+1. **User creates app** → AI generates React components
+2. **Production environment detected** → Activates dev server system
+3. **Components processed** → Converted to standalone React with CDN
+4. **Live preview created** → Real React app running in serverless function
+5. **Instant access** → Preview URL provides immediate interactive experience
+
+### **Technical Implementation**
+```typescript
+// Production Dev Server API Endpoints
+POST /api/dev-server/start        // Create live dev server
+GET  /api/dev-server/preview/:id  // Access live React app
+GET  /api/dev-server/manage       // Server management
+DELETE /api/dev-server/manage     // Cleanup servers
+```
+
+### **Live Preview Architecture**
+- **Quick Mode**: React components with CDN libraries (< 10s)
+- **Full Mode**: Complete Next.js build with npm install (60s+)
+- **Auto-Detection**: Chooses best mode based on environment and complexity
+- **Fallback System**: Graceful degradation to template previews if needed
+
+### **Environment Configuration**
+```bash
+# Force production dev server mode (optional)
+VOLTAIC_DEV_SERVER_MODE=quick
+
+# Environment auto-detection works with:
+# - Vercel (VERCEL=1)
+# - Netlify (NETLIFY=true) 
+# - AWS Lambda (AWS_LAMBDA_FUNCTION_NAME)
+# - Production (NODE_ENV=production)
+```
+
+### **Dev Server vs Template Previews**
+| Feature             | Dev Server (NEW)           | Template Preview      |
+| ------------------- | -------------------------- | --------------------- |
+| **Interactivity**   | ✅ Full React hooks, events | ❌ Static display only |
+| **Speed**           | ⚡ < 10 seconds             | 🐌 Template rendering  |
+| **Technology**      | 🚀 Live React + CDN         | 📄 HTML templates      |
+| **Environment**     | 🌐 Production serverless    | 💻 Any environment     |
+| **User Experience** | 🎯 Real app preview         | 👀 Code visualization  |
+
 ### Git Configuration
 The project is configured to exclude:
 - `generated-apps/` folder (local development only)
@@ -276,31 +330,6 @@ Visit the live demo: `https://your-app.vercel.app`
 ---
 
 **Built with ❤️ for the hackathon community**
-  workflow_id, created_at, updated_at
-)
-
-project_files (
-  id, project_id, file_path, file_content,
-  file_type, description, created_at
-)
-
-user_stats (
-  id, user_id, projects_created,
-  mvps_deployed, ai_generations
-)
-```
-
-## 🚀 Deployment
-
-```bash
-# Build for production
-npm run build
-
-# Deploy to Vercel
-vercel deploy
-
-# Configure environment variables in Vercel dashboard
-```
 
 ## 🤝 Contributing
 

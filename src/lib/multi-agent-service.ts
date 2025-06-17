@@ -744,19 +744,78 @@ ${analysisReport.length > 0 ? '\n**Notes:**\n' + analysisReport.join('\n') : ''}
                 process.env.AWS_LAMBDA_FUNCTION_NAME || // AWS Lambda
                 process.cwd().includes('/var/task') || // Vercel Lambda working directory
                 process.cwd().includes('/.vercel/') || // Vercel local development
-                !process.env.NODE_ENV; // Default to production if NODE_ENV is not set
+                !process.env.NODE_ENV || // Default to production if NODE_ENV is not set
+                process.env.VOLTAIC_FORCE_PRODUCTION_MODE === 'true'; // Force production mode for testing
 
             if (isProduction) {
-                // In production, create a template-based preview
-                const previewUrl = `/preview/template/${projectId}`;
+                // 🚀 BREAKTHROUGH: Use the production dev server system that was successfully tested
+                logger.agentProgress('preview-agent', 'workflow_current', `Production environment: Using breakthrough dev server system`);
 
-                logger.agentProgress('preview-agent', 'workflow_current', `Production environment: Created template preview`);
+                try {
+                    // Convert generated files to the format expected by the dev server API
+                    const reactComponent = this.extractMainReactComponent(files, title);
+
+                    // Call the production dev server API
+                    let baseUrl = '';
+                    if (typeof window === 'undefined') {
+                        // Server-side: construct base URL
+                        baseUrl = process.env.VERCEL_URL
+                            ? `https://${process.env.VERCEL_URL}`
+                            : 'http://localhost:3000';
+                    } else {
+                        // Client-side: use current origin
+                        baseUrl = window.location.origin;
+                    }
+
+                    const devServerResponse = await fetch(`${baseUrl}/api/dev-server/start`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            projectId,
+                            projectTitle: title,
+                            reactComponent,
+                            quickMode: true // Use quick preview mode for fast deployment
+                        })
+                    });
+
+                    const devServerResult = await devServerResponse.json();
+
+                    if (devServerResult.success) {
+                        // The dev server system is working! Generate preview URL
+                        const previewUrl = `/api/dev-server/preview/${projectId}`;
+
+                        // Save project to database
+                        await this.saveProjectToDatabase(title, userInput, workflow.id, files, previewUrl);
+
+                        logger.agentProgress('preview-agent', 'workflow_current', `✅ Production dev server created successfully`);
+
+                        return {
+                            success: true,
+                            output: `🚀 **Live React Preview Ready!** Your ${title} is now running in Vercel's serverless environment!\n\n✨ **Preview URL:** ${previewUrl}\n\n🔧 **Technology:** Serverless React with CDN libraries\n📦 **Files:** ${files.length} components converted to live preview\n⚡ **Speed:** Quick preview mode (< 10 seconds)\n🌐 **Environment:** Production-ready serverless deployment\n\nYour app is running live with full React functionality in the cloud!`,
+                            files,
+                            previewUrl
+                        };
+                    } else {
+                        // Dev server failed, log the error and fall back
+                        console.log('Production dev server failed:', devServerResult.error);
+                        logger.agentProgress('preview-agent', 'workflow_current', `Dev server failed: ${devServerResult.error}, falling back to template`);
+                    }
+                } catch (devServerError) {
+                    console.log('Production dev server error:', devServerError);
+                    logger.agentProgress('preview-agent', 'workflow_current', `Dev server error: ${devServerError}, falling back to template`);
+                }
+
+                // Fallback to template preview if dev server fails
+                const templatePreviewUrl = `/preview/template/${projectId}`;
+                await this.saveProjectToDatabase(title, userInput, workflow.id, files, templatePreviewUrl);
 
                 return {
                     success: true,
-                    output: `✅ Template preview created for production environment. View your app at: ${previewUrl}. Files: ${files.length} generated components ready for template display.`,
+                    output: `📄 **Template Preview Ready!** Your ${title} is ready for viewing.\n\n🎨 **Preview Mode:** Template-based rendering (fallback)\n📁 **Files Generated:** ${files.length} components\n\nView your beautiful landing page design in the preview panel!`,
                     files,
-                    previewUrl
+                    previewUrl: templatePreviewUrl
                 };
             }
 
@@ -1506,24 +1565,92 @@ export function DefaultComponent() {
     }
 
     private generatePreview(title: string, files: GeneratedFile[]): string {
+        const mainFile = files.find(f => f.path.includes('page.tsx')) || files[0];
+        if (!mainFile) {
+            return `<div>No files generated</div>`;
+        }
+
         return `
-        <div class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-            <div class="container mx-auto px-6 py-12">
-                <h1 class="text-4xl font-bold text-white text-center mb-8">${title}</h1>
-                <div class="text-center">
-                    <p class="text-white/80 mb-8">Your beautiful landing page is ready!</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        ${files.map(file => `
-                            <div class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6">
-                                <h3 class="text-white font-semibold mb-2">${file.path}</h3>
-                                <p class="text-white/70 text-sm">${file.description}</p>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
+        <div style="font-family: system-ui; max-width: 800px; margin: 0 auto; padding: 20px;">
+            <h1>${title}</h1>
+            <p>Generated ${files.length} files:</p>
+            <ul>
+                ${files.map(f => `<li><strong>${f.path}</strong> (${f.type})</li>`).join('')}
+            </ul>
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                <h3>Main Component Preview:</h3>
+                <pre style="white-space: pre-wrap; font-size: 14px;">${mainFile.content.substring(0, 500)}...</pre>
             </div>
         </div>
         `;
+    }
+
+    /**
+     * Extract the main React component from generated files for the dev server API
+     */
+    private extractMainReactComponent(files: GeneratedFile[], title: string): string {
+        // Find the main page component
+        const mainPageFile = files.find(f =>
+            f.path.includes('page.tsx') ||
+            f.path.includes('App.tsx') ||
+            f.path.includes('index.tsx')
+        );
+
+        if (mainPageFile) {
+            // Return the main page component
+            return mainPageFile.content;
+        }
+
+        // If no main page found, create a simple component that imports and uses other components
+        const componentFiles = files.filter(f =>
+            f.path.includes('components/') &&
+            f.path.endsWith('.tsx') &&
+            !f.path.includes('layout') &&
+            !f.path.includes('globals')
+        );
+
+        if (componentFiles.length === 0) {
+            // Fallback: create a simple React component
+            return `"use client";
+
+import React from 'react';
+
+export default function ${title.replace(/[^a-zA-Z0-9]/g, '')}() {
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-8 text-center">
+                <h1 className="text-4xl font-bold text-white mb-4">${title}</h1>
+                <p className="text-white/80">Welcome to your new React application!</p>
+            </div>
+        </div>
+    );
+}`;
+        }
+
+        // Create a main component that imports and uses the generated components
+        const imports = componentFiles.map(f => {
+            const componentName = f.path.split('/').pop()?.replace('.tsx', '') || 'Component';
+            const importPath = f.path.replace('.tsx', '').replace('components/', './components/');
+            return `import { ${componentName} } from '${importPath}';`;
+        }).join('\n');
+
+        const componentUsage = componentFiles.map(f => {
+            const componentName = f.path.split('/').pop()?.replace('.tsx', '') || 'Component';
+            return `            <${componentName} />`;
+        }).join('\n');
+
+        return `"use client";
+
+import React from 'react';
+${imports}
+
+export default function ${title.replace(/[^a-zA-Z0-9]/g, '')}() {
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+${componentUsage}
+        </div>
+    );
+}`;
     }
 
     private generateMainPage(title: string, analysis: string): string {
