@@ -54,12 +54,6 @@ export default function Home() {
                 <a href="#features" className="text-white/70 hover:text-white transition-colors">
                   Features
                 </a>
-                <a href="#pricing" className="text-white/70 hover:text-white transition-colors">
-                  Pricing
-                </a>
-                <a href="#docs" className="text-white/70 hover:text-white transition-colors">
-                  Docs
-                </a>
                 <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors">
                   Sign In
                 </a>
@@ -85,12 +79,6 @@ export default function Home() {
                 <div className="flex flex-col space-y-3">
                   <a href="#features" className="text-white/70 hover:text-white transition-colors py-2">
                     Features
-                  </a>
-                  <a href="#pricing" className="text-white/70 hover:text-white transition-colors py-2">
-                    Pricing
-                  </a>
-                  <a href="#docs" className="text-white/70 hover:text-white transition-colors py-2">
-                    Docs
                   </a>
                   <a href="/auth/signin" className="text-white/70 hover:text-white transition-colors py-2">
                     Sign In
