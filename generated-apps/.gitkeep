@@ -1,0 +1,2 @@
+# This file ensures the generated-apps directory is tracked by git
+# All other contents of this directory are ignored via .gitignore 

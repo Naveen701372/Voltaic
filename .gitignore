@@ -37,6 +37,7 @@ env.local
 next-env.d.ts
 
 # Generated apps and documentation
-generated-apps/
+generated-apps/*
+!generated-apps/.gitkeep
 *.md
 !README.md
