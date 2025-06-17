@@ -257,6 +257,17 @@ export class ProductionDevServerManager {
         const baseDir = this.environment.writableDirectory || '/tmp';
         const projectPath = path.join(baseDir, 'voltaic-dev-servers', projectId);
 
+        // Check if project directory already exists with content
+        try {
+            const files = await fs.readdir(projectPath);
+            if (files.length > 0) {
+                // Project directory exists and has content, assume it's a valid project
+                return projectPath;
+            }
+        } catch (error) {
+            // Directory doesn't exist, continue with creation
+        }
+
         await fs.mkdir(projectPath, { recursive: true });
         await fs.mkdir(path.join(projectPath, 'src', 'app'), { recursive: true });
         await fs.mkdir(path.join(projectPath, 'src', 'components'), { recursive: true });
@@ -275,35 +286,37 @@ progress=false
 `;
         await fs.writeFile(path.join(projectPath, '.npmrc'), npmrcContent);
 
-        // Create package.json
-        const packageJson = {
-            name: `voltaic-${projectId}`,
-            version: "0.1.0",
-            private: true,
-            scripts: {
-                dev: "next dev",
-                build: "next build",
-                start: "next start",
-                lint: "next lint"
-            },
-            dependencies: {
-                next: "^14.0.0",
-                react: "^18.0.0",
-                "react-dom": "^18.0.0",
-                "@types/node": "^20.0.0",
-                "@types/react": "^18.0.0",
-                "@types/react-dom": "^18.0.0",
-                autoprefixer: "^10.0.0",
-                postcss: "^8.0.0",
-                tailwindcss: "^3.3.0",
-                typescript: "^5.0.0"
-            }
-        };
-
-        await fs.writeFile(
-            path.join(projectPath, 'package.json'),
-            JSON.stringify(packageJson, null, 2)
-        );
+        // Create package.json only if it doesn't exist
+        const packageJsonPath = path.join(projectPath, 'package.json');
+        try {
+            await fs.access(packageJsonPath);
+        } catch {
+            // package.json doesn't exist, create it
+            const packageJson = {
+                name: `voltaic-${projectId}`,
+                version: "0.1.0",
+                private: true,
+                scripts: {
+                    dev: "next dev",
+                    build: "next build",
+                    start: "next start",
+                    lint: "next lint"
+                },
+                dependencies: {
+                    next: "^14.0.0",
+                    react: "^18.0.0",
+                    "react-dom": "^18.0.0",
+                    "@types/node": "^20.0.0",
+                    "@types/react": "^18.0.0",
+                    "@types/react-dom": "^18.0.0",
+                    autoprefixer: "^10.0.0",
+                    postcss: "^8.0.0",
+                    tailwindcss: "^3.3.0",
+                    typescript: "^5.0.0"
+                }
+            };
+            await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+        }
 
         // Create Next.js config
         const nextConfig = `/** @type {import('next').NextConfig} */
