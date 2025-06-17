@@ -191,6 +191,8 @@ export class ProductionDevServerManager {
 
                 // Process components to remove imports and exports
                 const processedComponents = Array.from(components.entries()).map(([name, content]) => {
+                    // Remove 'use client' directive
+                    content = content.replace(/'use client';\n*/g, '');
                     // Remove imports
                     content = content.replace(/import\s+.*?;?\n/g, '');
                     // Remove exports but keep the component definition
@@ -198,12 +200,14 @@ export class ProductionDevServerManager {
                     content = content.replace(/export\s+default\s+const\s+(\w+)/, 'const $1');
                     content = content.replace(/export\s+function\s+(\w+)/, 'function $1');
                     content = content.replace(/export\s+const\s+(\w+)/, 'const $1');
+                    content = content.replace(/export\s+{\s*(\w+)\s*}/, 'const $1 = $1');
                     // Remove CSS imports
                     content = content.replace(/import\s+['"].*\.css['"];?\n?/g, '');
                     return content;
                 }).join('\n\n');
 
                 // Process main component
+                mainComponent = mainComponent.replace(/'use client';\n*/g, '');
                 mainComponent = mainComponent.replace(/import\s+.*?;?\n/g, '');
                 // Handle default exports
                 mainComponent = mainComponent.replace(/export\s+default\s+function\s+(\w+)/, 'function $1');
@@ -213,6 +217,7 @@ export class ProductionDevServerManager {
                 mainComponent = mainComponent.replace(/export\s+const\s+(\w+)/, 'const $1');
                 // Handle direct default exports of identifiers
                 mainComponent = mainComponent.replace(/export\s+default\s+(\w+)/, 'const $1 = $1');
+                mainComponent = mainComponent.replace(/export\s+{\s*(\w+)\s*}/, 'const $1 = $1');
                 // Remove CSS imports
                 mainComponent = mainComponent.replace(/import\s+['"].*\.css['"];?\n?/g, '');
 
