@@ -214,6 +214,13 @@ user_stats (
 
 ## 🚀 Production Deployment
 
+### Environment Detection
+The platform automatically detects production environments and adapts its behavior:
+
+- **Development**: Creates live preview apps with file system operations
+- **Production**: Uses template-based previews without file system access
+- **Vercel/Netlify**: Automatically detected via environment variables
+
 ### Build Configuration
 ```bash
 # Clean build (excludes generated-apps folder)
@@ -222,6 +229,12 @@ npm run build
 # Memory optimization for large projects
 NODE_OPTIONS="--max-old-space-size=8192" npm run build
 ```
+
+### Production Features
+✅ **No File System Operations**: Prevents `ENOENT` errors on read-only platforms  
+✅ **Template Previews**: Generated apps displayed via template system  
+✅ **Environment Auto-Detection**: Works with Vercel, Netlify, and other platforms  
+✅ **Optimized Builds**: Excludes development-only directories and files  
 
 ### Git Configuration
 The project is configured to exclude:
@@ -237,6 +250,12 @@ npm i -g vercel
 # Deploy
 vercel --prod
 ```
+
+The platform will automatically:
+1. Detect the production environment
+2. Skip file system operations
+3. Use template-based previews
+4. Build without generated-apps dependencies
 
 ## 🎯 Performance Optimizations
 

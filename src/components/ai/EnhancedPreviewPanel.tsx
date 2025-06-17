@@ -19,7 +19,7 @@ import {
 import { GlassCard, GlassButton } from '@/components/glass';
 import { AppProject, GeneratedFile } from './types';
 import { usePreviewManager } from '@/hooks/usePreviewManager';
-import path from 'path';
+// Removed path import - not needed in client-side components
 
 interface EnhancedPreviewPanelProps {
     currentProject: AppProject | null;
@@ -83,8 +83,9 @@ export function EnhancedPreviewPanel({
     const handleRelaunch = async () => {
         if (!currentProject) return;
 
-        const projectPath = path.join(process.cwd(), 'generated-apps', currentProject.id);
-        await startPreview(projectPath, true);
+        // In client-side components, we don't have access to file system
+        // The preview manager will handle the path construction server-side
+        await startPreview(currentProject.id, true);
         setPreviewMode('live');
     };
 

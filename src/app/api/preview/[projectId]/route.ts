@@ -13,7 +13,23 @@ export async function GET(
             return new NextResponse('Project ID is required', { status: 400 });
         }
 
-        // Check if project exists
+        // Check if we're in production environment (multiple checks for different platforms)
+        const isProduction =
+            process.env.NODE_ENV === 'production' ||
+            process.env.VERCEL === '1' ||
+            process.env.VERCEL_ENV === 'production' ||
+            process.env.NETLIFY === 'true' ||
+            process.env.AWS_LAMBDA_FUNCTION_NAME || // AWS Lambda
+            process.cwd().includes('/var/task') || // Vercel Lambda working directory
+            process.cwd().includes('/.vercel/') || // Vercel local development
+            !process.env.NODE_ENV; // Default to production if NODE_ENV is not set
+
+        if (isProduction) {
+            // In production, redirect to template preview
+            return NextResponse.redirect(new URL(`/preview/template/${projectId}`, req.url));
+        }
+
+        // Development environment - check if project exists
         const projectDir = path.join(process.cwd(), 'generated-apps', projectId);
 
         try {

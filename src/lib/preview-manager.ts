@@ -32,6 +32,35 @@ class PreviewManager {
     }
 
     async createPreview(projectId: string, files: GeneratedFile[], title: string, options: PreviewOptions): Promise<PreviewResult> {
+        console.log(`🎬 Creating preview for project: ${projectId}`);
+        console.log(`📁 Files to process: ${files.length}`);
+        console.log(`🎯 Title: ${title}`);
+        console.log(`⚙️ Options:`, options);
+
+        // Check if we're in production environment (multiple checks for different platforms)
+        const isProduction =
+            process.env.NODE_ENV === 'production' ||
+            process.env.VERCEL === '1' ||
+            process.env.VERCEL_ENV === 'production' ||
+            process.env.NETLIFY === 'true' ||
+            process.env.AWS_LAMBDA_FUNCTION_NAME || // AWS Lambda
+            process.cwd().includes('/var/task') || // Vercel Lambda working directory
+            process.cwd().includes('/.vercel/') || // Vercel local development
+            !process.env.NODE_ENV; // Default to production if NODE_ENV is not set
+
+        if (isProduction) {
+            // In production, return a template-based preview since we can't build actual apps
+            console.log(`🚀 Production environment detected - returning template preview for ${projectId}`);
+
+            return {
+                success: true,
+                previewUrl: `/preview/template/${projectId}`,
+                mode: 'template',
+                buildLogs: ['Production environment: Using template preview instead of live build']
+            };
+        }
+
+        // Development environment - continue with normal preview logic
         try {
             if (options.mode === 'template') {
                 return this.createTemplatePreview(projectId, files, title);
@@ -39,12 +68,14 @@ class PreviewManager {
                 return await this.createBuildPreview(projectId, files, title, options);
             }
         } catch (error) {
-            console.error('Preview creation error:', error);
+            console.error(`❌ Preview creation failed for ${projectId}:`, error);
+
             return {
                 success: false,
                 previewUrl: '',
                 mode: options.mode,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Unknown error',
+                buildLogs: [`Error: ${error instanceof Error ? error.message : 'Unknown error'}`]
             };
         }
     }

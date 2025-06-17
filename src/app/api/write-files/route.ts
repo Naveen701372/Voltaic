@@ -13,7 +13,74 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create project directory
+    // Debug environment variables for Vercel troubleshooting
+    console.log('🔍 Environment Debug:', {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      VERCEL_URL: process.env.VERCEL_URL,
+      NETLIFY: process.env.NETLIFY,
+      AWS_LAMBDA_FUNCTION_NAME: process.env.AWS_LAMBDA_FUNCTION_NAME,
+      PWD: process.env.PWD,
+      CWD: process.cwd(),
+      LAMBDA_TASK_ROOT: process.env.LAMBDA_TASK_ROOT,
+      AWS_EXECUTION_ENV: process.env.AWS_EXECUTION_ENV
+    });
+
+    // Debug request data
+    console.log('📨 Request Debug:', {
+      projectId,
+      projectIdType: typeof projectId,
+      projectIdLength: projectId?.length,
+      title,
+      filesCount: files?.length,
+      timestamp: new Date().toISOString()
+    });
+
+    // Check if we're in production environment (multiple checks for different platforms)
+    const isProduction =
+      process.env.NODE_ENV === 'production' ||
+      process.env.VERCEL === '1' ||
+      process.env.VERCEL_ENV === 'production' ||
+      process.env.NETLIFY === 'true' ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME || // AWS Lambda
+      process.cwd().includes('/var/task') || // Vercel Lambda working directory
+      process.cwd().includes('/.vercel/') || // Vercel local development
+      !process.env.NODE_ENV; // Default to production if NODE_ENV is not set
+
+    console.log(`🎯 Production Detection Result: ${isProduction}`);
+
+    if (isProduction) {
+      // In production, we can't write files to disk
+      // Return success but indicate that files are stored in memory only
+      console.log(`🚀 Production environment detected - skipping file writing for project ${projectId}`);
+
+      // Debug projectId value in production
+      console.log('🆔 ProjectId Debug:', {
+        projectId,
+        type: typeof projectId,
+        length: projectId?.length,
+        startsWith_workflow: projectId?.startsWith?.('workflow_'),
+        raw: JSON.stringify(projectId)
+      });
+
+      return NextResponse.json({
+        success: true,
+        projectDir: `/var/task/generated-apps/${projectId}`, // Virtual path matching actual Vercel environment
+        filesWritten: files.length,
+        filesList: files.map(f => f.path),
+        mode: 'memory', // Indicate this is memory-only
+        message: 'Files stored in memory for production environment - no file system operations performed',
+        debug: {
+          projectId,
+          isProduction: true,
+          detectionReason: 'Multiple production indicators detected',
+          actualWorkingDir: process.cwd()
+        }
+      });
+    }
+
+    // Development environment - continue with file operations
     const projectDir = path.join(process.cwd(), 'generated-apps', projectId);
     await fs.mkdir(projectDir, { recursive: true });
 

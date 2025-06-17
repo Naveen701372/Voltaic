@@ -735,7 +735,32 @@ ${analysisReport.length > 0 ? '\n**Notes:**\n' + analysisReport.join('\n') : ''}
         try {
             const projectId = workflow.id;
 
-            // Write files first (required for both approaches)
+            // Check if we're in production environment (multiple checks for different platforms)
+            const isProduction =
+                process.env.NODE_ENV === 'production' ||
+                process.env.VERCEL === '1' ||
+                process.env.VERCEL_ENV === 'production' ||
+                process.env.NETLIFY === 'true' ||
+                process.env.AWS_LAMBDA_FUNCTION_NAME || // AWS Lambda
+                process.cwd().includes('/var/task') || // Vercel Lambda working directory
+                process.cwd().includes('/.vercel/') || // Vercel local development
+                !process.env.NODE_ENV; // Default to production if NODE_ENV is not set
+
+            if (isProduction) {
+                // In production, create a template-based preview
+                const previewUrl = `/preview/template/${projectId}`;
+
+                logger.agentProgress('preview-agent', 'workflow_current', `Production environment: Created template preview`);
+
+                return {
+                    success: true,
+                    output: `✅ Template preview created for production environment. View your app at: ${previewUrl}. Files: ${files.length} generated components ready for template display.`,
+                    files,
+                    previewUrl
+                };
+            }
+
+            // Development environment - continue with file writing and live preview
             try {
                 let baseUrl = '';
                 if (typeof window === 'undefined') {
