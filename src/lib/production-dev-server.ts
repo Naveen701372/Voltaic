@@ -307,6 +307,38 @@ export class ProductionDevServerManager {
             return null;
         };
 
+        // Register all components in the window object
+        const registerComponents = () => {
+            // First register all imported components
+            const componentRegex = /function\s+(\w+)|const\s+(\w+)\s*=/g;
+            let match;
+            const allComponents = new Set();
+            
+            // Find all component names in the processed components
+            while ((match = componentRegex.exec(processedComponents)) !== null) {
+                const name = match[1] || match[2];
+                if (name) allComponents.add(name);
+            }
+            
+            // Find all component names in the main component
+            componentRegex.lastIndex = 0; // Reset regex index
+            while ((match = componentRegex.exec(mainComponent)) !== null) {
+                const name = match[1] || match[2];
+                if (name) allComponents.add(name);
+            }
+
+            // Register each component in the window object
+            allComponents.forEach(name => {
+                if (typeof window[name] === 'undefined' && typeof eval(name) === 'function') {
+                    window[name] = eval(name);
+                    console.log('Registered component:', name);
+                }
+            });
+        };
+
+        // Register components immediately
+        registerComponents();
+
         const mainComponentName = extractMainComponent(\`${mainComponent}\`);
         console.log('Found main component:', mainComponentName);
         
@@ -326,6 +358,7 @@ export class ProductionDevServerManager {
             
             if (!MainComponent) {
                 console.log('Component not found in window object:', mainComponentName);
+                console.log('Available components:', Array.from(Object.keys(window)).filter(key => typeof window[key] === 'function'));
             }
 
             return (
