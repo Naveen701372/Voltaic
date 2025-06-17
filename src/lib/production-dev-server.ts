@@ -142,6 +142,19 @@ export class ProductionDevServerManager {
         await fs.mkdir(path.join(projectPath, 'src', 'app'), { recursive: true });
         await fs.mkdir(path.join(projectPath, 'src', 'components'), { recursive: true });
         await fs.mkdir(path.join(projectPath, 'public'), { recursive: true });
+        await fs.mkdir(path.join(projectPath, '.npm-cache'), { recursive: true });
+        await fs.mkdir(path.join(projectPath, '.cache'), { recursive: true });
+
+        // Create .npmrc for serverless environment
+        const npmrcContent = `cache=${projectPath}/.npm-cache
+prefix=${projectPath}
+userconfig=${projectPath}/.npmrc
+audit=false
+fund=false
+optional=false
+progress=false
+`;
+        await fs.writeFile(path.join(projectPath, '.npmrc'), npmrcContent);
 
         // Create package.json
         const packageJson = {
@@ -358,14 +371,28 @@ export default function Page() {
             serverInfo.status = 'installing';
             serverInfo.logs.push(`[${new Date().toISOString()}] Installing dependencies...`);
 
-            const npmProcess = spawn('npm', ['install'], {
+            const npmProcess = spawn('npm', [
+                'install',
+                '--no-fund',
+                '--no-audit',
+                '--cache', `${serverInfo.projectPath}/.npm-cache`,
+                '--prefer-offline',
+                '--no-optional'
+            ], {
                 cwd: serverInfo.projectPath,
                 stdio: ['pipe', 'pipe', 'pipe'],
                 env: {
                     ...process.env,
                     NODE_ENV: 'development',
                     NPM_CONFIG_AUDIT: 'false',
-                    NPM_CONFIG_FUND: 'false'
+                    NPM_CONFIG_FUND: 'false',
+                    npm_config_cache: `${serverInfo.projectPath}/.npm-cache`,
+                    npm_config_prefix: serverInfo.projectPath,
+                    npm_config_userconfig: `${serverInfo.projectPath}/.npmrc`,
+                    HOME: serverInfo.projectPath,
+                    XDG_CONFIG_HOME: serverInfo.projectPath,
+                    XDG_DATA_HOME: serverInfo.projectPath,
+                    XDG_CACHE_HOME: `${serverInfo.projectPath}/.cache`
                 }
             });
 
