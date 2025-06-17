@@ -32,270 +32,11 @@ interface LogData {
     url: string;
 }
 
-const EXAMPLE_REACT_COMPONENTS = {
-    todoApp: `function App() {
-  const [todos, setTodos] = React.useState([
-    { id: 1, text: 'Learn React', completed: false },
-    { id: 2, text: 'Build awesome apps', completed: false }
-  ]);
-  const [newTodo, setNewTodo] = React.useState('');
-
-  const addTodo = () => {
-    if (newTodo.trim()) {
-      setTodos([...todos, {
-        id: Date.now(),
-        text: newTodo,
-        completed: false
-      }]);
-      setNewTodo('');
-    }
-  };
-
-  const toggleTodo = (id) => {
-    setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
-  };
-
-  return (
-    <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Todo App</h2>
-      <div className="flex mb-4">
-        <input
-          type="text"
-          value={newTodo}
-          onChange={(e) => setNewTodo(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && addTodo()}
-          placeholder="Add a new todo..."
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          onClick={addTodo}
-          className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          Add
-        </button>
-      </div>
-      <ul className="space-y-2">
-        {todos.map(todo => (
-          <li key={todo.id} className="flex items-center p-2 rounded bg-gray-50">
-            <input
-              type="checkbox"
-              checked={todo.completed}
-              onChange={() => toggleTodo(todo.id)}
-              className="mr-3"
-            />
-            <span className="flex-1">{todo.text}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-4 text-sm text-gray-600">
-        Total: {todos.length} | Completed: {todos.filter(t => t.completed).length}
-      </div>
-    </div>
-  );
-}`,
-
-    calculator: `function App() {
-  const [display, setDisplay] = React.useState('0');
-  const [operation, setOperation] = React.useState(null);
-  const [waitingForNewValue, setWaitingForNewValue] = React.useState(false);
-
-  const inputNumber = (num) => {
-    if (waitingForNewValue) {
-      setDisplay(String(num));
-      setWaitingForNewValue(false);
-    } else {
-      setDisplay(display === '0' ? String(num) : display + num);
-    }
-  };
-
-  const calculate = (prevOperation, inputValue, currentValue) => {
-    switch (prevOperation) {
-      case '+': return inputValue + currentValue;
-      case '-': return inputValue - currentValue;
-      case '×': return inputValue * currentValue;
-      case '÷': return inputValue / currentValue;
-      default: return currentValue;
-    }
-  };
-
-  const clearAll = () => {
-    setDisplay('0');
-    setOperation(null);
-    setWaitingForNewValue(false);
-  };
-
-  return (
-    <div className="max-w-sm mx-auto mt-8 p-6 bg-white rounded-xl shadow-lg">
-      <div className="mb-4 p-4 bg-gray-100 rounded-lg text-right">
-        <div className="text-3xl font-mono">{display}</div>
-      </div>
-      <div className="grid grid-cols-4 gap-3">
-        <button onClick={clearAll} className="col-span-2 bg-red-500 text-white hover:bg-red-600 h-16 rounded-lg">
-          Clear
-        </button>
-        <button onClick={() => inputNumber(7)} className="bg-gray-200 hover:bg-gray-300 h-16 rounded-lg">7</button>
-        <button onClick={() => inputNumber(8)} className="bg-gray-200 hover:bg-gray-300 h-16 rounded-lg">8</button>
-      </div>
-    </div>
-  );
-}`,
-
-    dashboard: `function App() {
-  const [stats, setStats] = React.useState({
-    users: 1250,
-    revenue: 45780,
-    orders: 892,
-    growth: 23.5
-  });
-  
-  const [activeTab, setActiveTab] = React.useState('overview');
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="max-w-4xl mx-auto mt-8 p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-300 rounded mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-300 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-4xl mx-auto mt-8 p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Analytics Dashboard</h1>
-      
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
-          <div className="text-2xl font-bold text-blue-600">{stats.users.toLocaleString()}</div>
-          <div className="text-gray-600">Total Users</div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
-          <div className="text-2xl font-bold text-green-600">{formatCurrency(stats.revenue)}</div>
-          <div className="text-gray-600">Revenue</div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
-          <div className="text-2xl font-bold text-purple-600">{stats.orders}</div>
-          <div className="text-gray-600">Orders</div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-orange-500">
-          <div className="text-2xl font-bold text-orange-600">+{stats.growth}%</div>
-          <div className="text-gray-600">Growth</div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-md">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
-            {['overview', 'analytics', 'reports'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={\`py-4 px-1 border-b-2 font-medium text-sm capitalize \${
-                  activeTab === tab
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }\`}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
-        </div>
-        
-        <div className="p-6">
-          {activeTab === 'overview' && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Overview</h3>
-              <p className="text-gray-600 mb-4">Welcome to your dashboard! Here's a quick overview of your key metrics.</p>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <div className="font-medium text-blue-800">💡 Pro Tip</div>
-                <div className="text-blue-700">Your user growth is up {stats.growth}% this month!</div>
-              </div>
-            </div>
-          )}
-          
-          {activeTab === 'analytics' && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Analytics</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">User Engagement</h4>
-                  <div className="text-3xl font-bold text-green-600">87%</div>
-                  <div className="text-sm text-gray-600">Average session time: 4m 32s</div>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium mb-2">Conversion Rate</h4>
-                  <div className="text-3xl font-bold text-blue-600">12.4%</div>
-                  <div className="text-sm text-gray-600">Up 2.1% from last month</div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {activeTab === 'reports' && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Reports</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">Monthly Revenue Report</div>
-                    <div className="text-sm text-gray-600">Generated today</div>
-                  </div>
-                  <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                    Download
-                  </button>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">User Activity Report</div>
-                    <div className="text-sm text-gray-600">Generated yesterday</div>
-                  </div>
-                  <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                    Download
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}`
-};
-
 export default function TestDevServersPage() {
     const [environment, setEnvironment] = useState<any>(null);
     const [devServers, setDevServers] = useState<DevServerInfo[]>([]);
     const [testResults, setTestResults] = useState<TestResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedComponent, setSelectedComponent] = useState<string>('todoApp');
     const [customProjectId, setCustomProjectId] = useState('');
     const [customProjectTitle, setCustomProjectTitle] = useState('');
     const [selectedServer, setSelectedServer] = useState<string | null>(null);
@@ -305,6 +46,9 @@ export default function TestDevServersPage() {
     const [buildProgress, setBuildProgress] = useState<string>('');
     const [showPreview, setShowPreview] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string>('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const logsEndRef = useRef<HTMLDivElement>(null);
 
@@ -378,23 +122,47 @@ export default function TestDevServersPage() {
         }
     };
 
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && file.type === 'application/zip') {
+            setSelectedFile(file);
+            setUploadProgress(0);
+        } else {
+            addTestResult({
+                success: false,
+                message: 'Please select a valid ZIP file',
+                timestamp: Date.now()
+            });
+        }
+    };
+
     const startDevServer = async () => {
+        if (!selectedFile) {
+            addTestResult({
+                success: false,
+                message: 'Please select a ZIP file to upload',
+                timestamp: Date.now()
+            });
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            const projectId = customProjectId || 'test-' + Date.now().toString().slice(-5);
-            const projectTitle = customProjectTitle || 'Development Server Test';
-            const reactComponent = EXAMPLE_REACT_COMPONENTS[selectedComponent as keyof typeof EXAMPLE_REACT_COMPONENTS];
+            const projectId = customProjectId || 'app-' + Math.random().toString(36).substring(2, 8);
+            const projectTitle = customProjectTitle || 'Uploaded Project';
 
-            const response = await fetch('/api/dev-server/start', {
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('projectId', projectId);
+            formData.append('projectTitle', projectTitle);
+            formData.append('quickMode', quickMode.toString());
+
+            const response = await fetch('/api/dev-server/upload-and-start', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    projectId,
-                    reactComponent,
-                    projectTitle,
-                    quickMode
-                })
+                body: formData,
+                // Don't set Content-Type header, let browser set it with boundary
             });
 
             const result = await response.json();
@@ -411,6 +179,10 @@ export default function TestDevServersPage() {
                 setSelectedServer(projectId);
                 setLogs([]);
                 setShowPreview(false);
+                setSelectedFile(null);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
 
                 setTimeout(loadDevServers, 1000);
                 setCustomProjectId('');
@@ -434,6 +206,7 @@ export default function TestDevServersPage() {
             });
         } finally {
             setIsLoading(false);
+            setUploadProgress(0);
         }
     };
 
@@ -587,17 +360,35 @@ export default function TestDevServersPage() {
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        React Component
+                                        Upload React Project (ZIP)
                                     </label>
-                                    <select
-                                        value={selectedComponent}
-                                        onChange={(e) => setSelectedComponent(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-800"
-                                    >
-                                        <option value="todoApp">📝 Todo App (Interactive)</option>
-                                        <option value="calculator">🧮 Calculator (Math)</option>
-                                        <option value="dashboard">📊 Dashboard (Complex UI)</option>
-                                    </select>
+                                    <div className="flex flex-col space-y-2">
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept=".zip"
+                                            onChange={handleFileChange}
+                                            className="block w-full text-sm text-gray-500
+                                                file:mr-4 file:py-2 file:px-4
+                                                file:rounded-full file:border-0
+                                                file:text-sm file:font-semibold
+                                                file:bg-blue-50 file:text-blue-700
+                                                hover:file:bg-blue-100"
+                                        />
+                                        {selectedFile && (
+                                            <div className="text-sm text-gray-600">
+                                                Selected: {selectedFile.name}
+                                            </div>
+                                        )}
+                                        {uploadProgress > 0 && uploadProgress < 100 && (
+                                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                                <div
+                                                    className="bg-blue-600 h-2.5 rounded-full"
+                                                    style={{ width: `${uploadProgress}%` }}
+                                                ></div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
@@ -643,7 +434,7 @@ export default function TestDevServersPage() {
 
                                 <button
                                     onClick={startDevServer}
-                                    disabled={isLoading}
+                                    disabled={isLoading || !selectedFile}
                                     className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3 px-4 rounded-lg transition-colors"
                                 >
                                     {isLoading ? '🔄 Creating...' : '🚀 Start Dev Server'}
