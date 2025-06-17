@@ -1,13 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, XCircle, AlertCircle, Clock, ExternalLink } from 'lucide-react';
 
 interface EnvironmentInfo {
     isProduction: boolean;
@@ -31,6 +24,7 @@ export default function TestProductionPage() {
     const [loading, setLoading] = useState(false);
     const [projectId, setProjectId] = useState(`test-${Date.now()}`);
     const [appTitle, setAppTitle] = useState('Test Production App');
+    const [activeTab, setActiveTab] = useState('configuration');
     const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
 
     // Sample React component for testing
@@ -214,15 +208,15 @@ export default function TestProductionPage() {
     };
 
     const getStatusIcon = (result?: TestResult) => {
-        if (!result) return <Clock className="w-4 h-4 text-gray-400" />;
-        if (result.success) return <CheckCircle className="w-4 h-4 text-green-500" />;
-        return <XCircle className="w-4 h-4 text-red-500" />;
+        if (!result) return '⏳';
+        if (result.success) return '✅';
+        return '❌';
     };
 
     const getStatusBadge = (result?: TestResult) => {
-        if (!result) return <Badge variant="secondary">Not Run</Badge>;
-        if (result.success) return <Badge variant="default" className="bg-green-500">Success</Badge>;
-        return <Badge variant="destructive">Failed</Badge>;
+        if (!result) return <span className="px-2 py-1 bg-gray-500 text-white rounded text-xs">Not Run</span>;
+        if (result.success) return <span className="px-2 py-1 bg-green-500 text-white rounded text-xs">Success</span>;
+        return <span className="px-2 py-1 bg-red-500 text-white rounded text-xs">Failed</span>;
     };
 
     return (
@@ -238,105 +232,98 @@ export default function TestProductionPage() {
                 </div>
 
                 {/* Environment Info */}
-                <Card className="mb-6 bg-white/10 backdrop-blur-md border-white/20">
-                    <CardHeader>
-                        <CardTitle className="text-white flex items-center gap-2">
-                            <AlertCircle className="w-5 h-5" />
-                            Environment Information
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {envInfo ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div>
-                                    <div className="text-white/60 text-sm">Platform</div>
-                                    <div className="text-white font-medium">{envInfo.platform}</div>
-                                </div>
-                                <div>
-                                    <div className="text-white/60 text-sm">Production</div>
-                                    <div className="text-white font-medium">
-                                        {envInfo.isProduction ? '✅ Yes' : '❌ No'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-white/60 text-sm">Working Directory</div>
-                                    <div className="text-white font-medium font-mono text-sm">
-                                        {envInfo.workingDirectory}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-white/60 text-sm">Can Write Files</div>
-                                    <div className="text-white font-medium">
-                                        {envInfo.canWriteFiles ? '✅ Yes' : '❌ No'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-white/60 text-sm">Writable Directory</div>
-                                    <div className="text-white font-medium font-mono text-sm">
-                                        {envInfo.writableDirectory || 'None'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-white/60 text-sm">Detection Reasons</div>
-                                    <div className="text-white text-sm">
-                                        {envInfo.detectionReasons.join(', ')}
-                                    </div>
+                <div className="mb-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                    <h2 className="text-white text-xl font-semibold mb-4 flex items-center gap-2">
+                        ⚠️ Environment Information
+                    </h2>
+                    {envInfo ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <div className="text-white/60 text-sm">Platform</div>
+                                <div className="text-white font-medium">{envInfo.platform}</div>
+                            </div>
+                            <div>
+                                <div className="text-white/60 text-sm">Production</div>
+                                <div className="text-white font-medium">
+                                    {envInfo.isProduction ? '✅ Yes' : '❌ No'}
                                 </div>
                             </div>
-                        ) : (
-                            <div className="text-white/60">Loading environment information...</div>
-                        )}
-                    </CardContent>
-                </Card>
+                            <div>
+                                <div className="text-white/60 text-sm">Working Directory</div>
+                                <div className="text-white font-medium font-mono text-sm">
+                                    {envInfo.workingDirectory}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-white/60 text-sm">Can Write Files</div>
+                                <div className="text-white font-medium">
+                                    {envInfo.canWriteFiles ? '✅ Yes' : '❌ No'}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-white/60 text-sm">Writable Directory</div>
+                                <div className="text-white font-medium font-mono text-sm">
+                                    {envInfo.writableDirectory || 'None'}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-white/60 text-sm">Detection Reasons</div>
+                                <div className="text-white text-sm">
+                                    {envInfo.detectionReasons.join(', ')}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-white/60">Loading environment information...</div>
+                    )}
+                </div>
 
-                <Tabs defaultValue="configuration" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-4 bg-white/10 backdrop-blur-md">
-                        <TabsTrigger value="configuration" className="text-white data-[state=active]:bg-white/20">
-                            Configuration
-                        </TabsTrigger>
-                        <TabsTrigger value="tests" className="text-white data-[state=active]:bg-white/20">
-                            Tests
-                        </TabsTrigger>
-                        <TabsTrigger value="results" className="text-white data-[state=active]:bg-white/20">
-                            Results
-                        </TabsTrigger>
-                        <TabsTrigger value="preview" className="text-white data-[state=active]:bg-white/20">
-                            Preview
-                        </TabsTrigger>
-                    </TabsList>
+                {/* Tabs */}
+                <div className="space-y-6">
+                    <div className="flex border-b border-white/20">
+                        {['configuration', 'tests', 'results', 'preview'].map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-4 py-2 font-medium capitalize ${activeTab === tab
+                                        ? 'text-white border-b-2 border-blue-400'
+                                        : 'text-white/60 hover:text-white/80'
+                                    }`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
 
                     {/* Configuration Tab */}
-                    <TabsContent value="configuration">
-                        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-                            <CardHeader>
-                                <CardTitle className="text-white">Test Configuration</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
+                    {activeTab === 'configuration' && (
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                            <h2 className="text-white text-xl font-semibold mb-4">Test Configuration</h2>
+                            <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-white/80 text-sm mb-2 block">Project ID</label>
                                         <div className="flex gap-2">
-                                            <Input
+                                            <input
                                                 value={projectId}
                                                 onChange={(e) => setProjectId(e.target.value)}
-                                                className="bg-white/10 border-white/20 text-white"
+                                                className="flex-1 bg-white/10 border border-white/20 text-white rounded px-3 py-2 placeholder-white/40"
                                                 placeholder="Enter project ID"
                                             />
-                                            <Button
+                                            <button
                                                 onClick={generateNewProjectId}
-                                                variant="outline"
-                                                className="border-white/20 text-white hover:bg-white/10"
+                                                className="px-4 py-2 border border-white/20 text-white hover:bg-white/10 rounded"
                                             >
                                                 Generate
-                                            </Button>
+                                            </button>
                                         </div>
                                     </div>
                                     <div>
                                         <label className="text-white/80 text-sm mb-2 block">App Title</label>
-                                        <Input
+                                        <input
                                             value={appTitle}
                                             onChange={(e) => setAppTitle(e.target.value)}
-                                            className="bg-white/10 border-white/20 text-white"
+                                            className="w-full bg-white/10 border border-white/20 text-white rounded px-3 py-2 placeholder-white/40"
                                             placeholder="Enter app title"
                                         />
                                     </div>
@@ -344,217 +331,180 @@ export default function TestProductionPage() {
 
                                 <div>
                                     <label className="text-white/80 text-sm mb-2 block">Sample Component Code</label>
-                                    <Textarea
+                                    <textarea
                                         value={sampleCode}
                                         onChange={(e) => setSampleCode(e.target.value)}
-                                        className="bg-white/10 border-white/20 text-white font-mono text-sm min-h-[200px]"
+                                        className="w-full bg-white/10 border border-white/20 text-white font-mono text-sm rounded px-3 py-2 placeholder-white/40 min-h-[200px]"
                                         placeholder="Enter React component code"
                                     />
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Tests Tab */}
-                    <TabsContent value="tests">
+                    {activeTab === 'tests' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-                                <CardHeader>
-                                    <CardTitle className="text-white text-lg flex items-center gap-2">
-                                        {getStatusIcon(testResults.writeFiles)}
-                                        Write Files Test
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-white/80 text-sm mb-4">
-                                        Test writing files using ProductionFileManager to /tmp directory
-                                    </p>
-                                    <Button
-                                        onClick={() => runTest('writeFiles', testWriteFiles)}
-                                        disabled={loading}
-                                        className="w-full"
-                                    >
-                                        {loading ? 'Running...' : 'Test Write Files'}
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                <h3 className="text-white text-lg font-semibold mb-2 flex items-center gap-2">
+                                    {getStatusIcon(testResults.writeFiles)} Write Files Test
+                                </h3>
+                                <p className="text-white/80 text-sm mb-4">
+                                    Test writing files using ProductionFileManager to /tmp directory
+                                </p>
+                                <button
+                                    onClick={() => runTest('writeFiles', testWriteFiles)}
+                                    disabled={loading}
+                                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded font-medium"
+                                >
+                                    {loading ? 'Running...' : 'Test Write Files'}
+                                </button>
+                            </div>
 
-                            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-                                <CardHeader>
-                                    <CardTitle className="text-white text-lg flex items-center gap-2">
-                                        {getStatusIcon(testResults.productionPreview)}
-                                        Production Preview Test
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-white/80 text-sm mb-4">
-                                        Test generating static HTML previews from React components
-                                    </p>
-                                    <Button
-                                        onClick={() => runTest('productionPreview', testProductionPreview)}
-                                        disabled={loading}
-                                        className="w-full"
-                                    >
-                                        {loading ? 'Running...' : 'Test Preview Generation'}
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                <h3 className="text-white text-lg font-semibold mb-2 flex items-center gap-2">
+                                    {getStatusIcon(testResults.productionPreview)} Production Preview Test
+                                </h3>
+                                <p className="text-white/80 text-sm mb-4">
+                                    Test generating static HTML previews from React components
+                                </p>
+                                <button
+                                    onClick={() => runTest('productionPreview', testProductionPreview)}
+                                    disabled={loading}
+                                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded font-medium"
+                                >
+                                    {loading ? 'Running...' : 'Test Preview Generation'}
+                                </button>
+                            </div>
 
-                            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-                                <CardHeader>
-                                    <CardTitle className="text-white text-lg flex items-center gap-2">
-                                        {getStatusIcon(testResults.htmlPreview)}
-                                        HTML Preview Test
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-white/80 text-sm mb-4">
-                                        Test HTML caching and serving functionality
-                                    </p>
-                                    <Button
-                                        onClick={() => runTest('htmlPreview', testHtmlPreview)}
-                                        disabled={loading}
-                                        className="w-full"
-                                    >
-                                        {loading ? 'Running...' : 'Test HTML Preview'}
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                <h3 className="text-white text-lg font-semibold mb-2 flex items-center gap-2">
+                                    {getStatusIcon(testResults.htmlPreview)} HTML Preview Test
+                                </h3>
+                                <p className="text-white/80 text-sm mb-4">
+                                    Test HTML caching and serving functionality
+                                </p>
+                                <button
+                                    onClick={() => runTest('htmlPreview', testHtmlPreview)}
+                                    disabled={loading}
+                                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded font-medium"
+                                >
+                                    {loading ? 'Running...' : 'Test HTML Preview'}
+                                </button>
+                            </div>
 
-                            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-                                <CardHeader>
-                                    <CardTitle className="text-white text-lg flex items-center gap-2">
-                                        {getStatusIcon(testResults.environment)}
-                                        Environment Test
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-white/80 text-sm mb-4">
-                                        Reload and test environment detection
-                                    </p>
-                                    <Button
-                                        onClick={loadEnvironmentInfo}
-                                        disabled={loading}
-                                        className="w-full"
-                                    >
-                                        {loading ? 'Running...' : 'Reload Environment'}
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                <h3 className="text-white text-lg font-semibold mb-2 flex items-center gap-2">
+                                    {getStatusIcon(testResults.environment)} Environment Test
+                                </h3>
+                                <p className="text-white/80 text-sm mb-4">
+                                    Reload and test environment detection
+                                </p>
+                                <button
+                                    onClick={loadEnvironmentInfo}
+                                    disabled={loading}
+                                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded font-medium"
+                                >
+                                    {loading ? 'Running...' : 'Reload Environment'}
+                                </button>
+                            </div>
 
-                            <Card className="bg-white/10 backdrop-blur-md border-white/20">
-                                <CardHeader>
-                                    <CardTitle className="text-white text-lg">
-                                        Run All Tests
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-white/80 text-sm mb-4">
-                                        Execute all tests in sequence
-                                    </p>
-                                    <Button
-                                        onClick={async () => {
-                                            await runTest('writeFiles', testWriteFiles);
-                                            await runTest('productionPreview', testProductionPreview);
-                                            await runTest('htmlPreview', testHtmlPreview);
-                                        }}
-                                        disabled={loading}
-                                        className="w-full"
-                                        variant="secondary"
-                                    >
-                                        {loading ? 'Running All Tests...' : 'Run All Tests'}
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                <h3 className="text-white text-lg font-semibold mb-2">
+                                    Run All Tests
+                                </h3>
+                                <p className="text-white/80 text-sm mb-4">
+                                    Execute all tests in sequence
+                                </p>
+                                <button
+                                    onClick={async () => {
+                                        await runTest('writeFiles', testWriteFiles);
+                                        await runTest('productionPreview', testProductionPreview);
+                                        await runTest('htmlPreview', testHtmlPreview);
+                                    }}
+                                    disabled={loading}
+                                    className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded font-medium"
+                                >
+                                    {loading ? 'Running All Tests...' : 'Run All Tests'}
+                                </button>
+                            </div>
                         </div>
-                    </TabsContent>
+                    )}
 
                     {/* Results Tab */}
-                    <TabsContent value="results">
+                    {activeTab === 'results' && (
                         <div className="space-y-4">
                             {Object.entries(testResults).map(([testName, result]) => (
-                                <Card key={testName} className="bg-white/10 backdrop-blur-md border-white/20">
-                                    <CardHeader>
-                                        <CardTitle className="text-white flex items-center justify-between">
-                                            <span className="flex items-center gap-2">
-                                                {getStatusIcon(result)}
-                                                {testName}
-                                            </span>
-                                            {getStatusBadge(result)}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-2">
-                                            <div className="text-white/60 text-sm">
-                                                Timestamp: {new Date(result.timestamp).toLocaleString()}
-                                            </div>
-                                            {result.duration && (
-                                                <div className="text-white/60 text-sm">
-                                                    Duration: {result.duration}ms
-                                                </div>
-                                            )}
-                                            {result.error && (
-                                                <div className="text-red-400 text-sm bg-red-500/10 p-2 rounded">
-                                                    Error: {result.error}
-                                                </div>
-                                            )}
-                                            {result.data && (
-                                                <details className="text-white/80 text-sm">
-                                                    <summary className="cursor-pointer text-white/60 mb-2">
-                                                        View Response Data
-                                                    </summary>
-                                                    <pre className="bg-black/20 p-3 rounded overflow-auto text-xs">
-                                                        {JSON.stringify(result.data, null, 2)}
-                                                    </pre>
-                                                </details>
-                                            )}
+                                <div key={testName} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-white text-lg font-semibold flex items-center gap-2">
+                                            {getStatusIcon(result)} {testName}
+                                        </h3>
+                                        {getStatusBadge(result)}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="text-white/60 text-sm">
+                                            Timestamp: {new Date(result.timestamp).toLocaleString()}
                                         </div>
-                                    </CardContent>
-                                </Card>
+                                        {result.duration && (
+                                            <div className="text-white/60 text-sm">
+                                                Duration: {result.duration}ms
+                                            </div>
+                                        )}
+                                        {result.error && (
+                                            <div className="text-red-400 text-sm bg-red-500/10 p-2 rounded">
+                                                Error: {result.error}
+                                            </div>
+                                        )}
+                                        {result.data && (
+                                            <details className="text-white/80 text-sm">
+                                                <summary className="cursor-pointer text-white/60 mb-2">
+                                                    View Response Data
+                                                </summary>
+                                                <pre className="bg-black/20 p-3 rounded overflow-auto text-xs">
+                                                    {JSON.stringify(result.data, null, 2)}
+                                                </pre>
+                                            </details>
+                                        )}
+                                    </div>
+                                </div>
                             ))}
                         </div>
-                    </TabsContent>
+                    )}
 
                     {/* Preview Tab */}
-                    <TabsContent value="preview">
-                        <Card className="bg-white/10 backdrop-blur-md border-white/20">
-                            <CardHeader>
-                                <CardTitle className="text-white flex items-center justify-between">
-                                    Generated Preview
-                                    {testResults.htmlPreview?.success && (
-                                        <Button
-                                            onClick={() => window.open(`/api/preview/html/${projectId}`, '_blank')}
-                                            variant="outline"
-                                            size="sm"
-                                            className="border-white/20 text-white hover:bg-white/10"
-                                        >
-                                            <ExternalLink className="w-4 h-4 mr-2" />
-                                            Open Preview
-                                        </Button>
-                                    )}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {testResults.htmlPreview?.success ? (
-                                    <div className="space-y-4">
-                                        <div className="text-white/80 text-sm">
-                                            Preview URL: <code className="bg-black/20 px-2 py-1 rounded">/api/preview/html/{projectId}</code>
-                                        </div>
-                                        <iframe
-                                            src={`/api/preview/html/${projectId}`}
-                                            className="w-full h-96 rounded border border-white/20"
-                                            title="Generated Preview"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="text-white/60 text-center py-8">
-                                        Run the HTML Preview test to see the generated preview here
-                                    </div>
+                    {activeTab === 'preview' && (
+                        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-white text-xl font-semibold">Generated Preview</h2>
+                                {testResults.htmlPreview?.success && (
+                                    <button
+                                        onClick={() => window.open(`/api/preview/html/${projectId}`, '_blank')}
+                                        className="px-4 py-2 border border-white/20 text-white hover:bg-white/10 rounded flex items-center gap-2"
+                                    >
+                                        🔗 Open Preview
+                                    </button>
                                 )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
+                            </div>
+                            {testResults.htmlPreview?.success ? (
+                                <div className="space-y-4">
+                                    <div className="text-white/80 text-sm">
+                                        Preview URL: <code className="bg-black/20 px-2 py-1 rounded">/api/preview/html/{projectId}</code>
+                                    </div>
+                                    <iframe
+                                        src={`/api/preview/html/${projectId}`}
+                                        className="w-full h-96 rounded border border-white/20"
+                                        title="Generated Preview"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="text-white/60 text-center py-8">
+                                    Run the HTML Preview test to see the generated preview here
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
