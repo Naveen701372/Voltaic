@@ -35,3 +35,7 @@ env.local
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Generated apps and documentation
+generated-apps/
+*.md
