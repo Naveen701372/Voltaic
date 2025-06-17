@@ -284,54 +284,52 @@ export class ProductionDevServerManager {
         // Define project title for component access
         const PROJECT_TITLE = "${projectTitle}";
         
-        // Define all components first
-        ${processedComponents}
-
-        // Define main component
-        ${mainComponent}
-
-        // Extract the default export or named export from the code
-        const extractMainComponent = (code) => {
-            // Try to find function declarations
-            const functionMatch = code.match(/function\s+(\w+)/);
-            if (functionMatch) {
-                return functionMatch[1];
+        // Helper function to extract component names
+        const extractComponents = (code) => {
+            const components = new Set();
+            const componentRegex = /function\s+(\w+)|const\s+(\w+)\s*=/g;
+            let match;
+            
+            while ((match = componentRegex.exec(code)) !== null) {
+                const name = match[1] || match[2];
+                if (name) components.add(name);
             }
-
-            // Try to find const assignments (for arrow functions)
-            const constMatch = code.match(/const\s+(\w+)\s*=/);
-            if (constMatch) {
-                return constMatch[1];
-            }
-
-            return null;
+            
+            return components;
         };
+
+        // Define and extract imported components
+        const importedComponentsCode = \`${processedComponents}\`;
+        const importedComponents = extractComponents(importedComponentsCode);
+        console.log('Found imported components:', Array.from(importedComponents));
+
+        // Execute the imported components code
+        eval(importedComponentsCode);
+
+        // Define and extract main component
+        const mainComponentCode = \`${mainComponent}\`;
+        const mainComponents = extractComponents(mainComponentCode);
+        console.log('Found main components:', Array.from(mainComponents));
+
+        // Execute the main component code
+        eval(mainComponentCode);
 
         // Register all components in the window object
         const registerComponents = () => {
-            // First register all imported components
-            const componentRegex = /function\s+(\w+)|const\s+(\w+)\s*=/g;
-            let match;
-            const allComponents = new Set();
+            const allComponents = new Set([...importedComponents, ...mainComponents]);
             
-            // Find all component names in the processed components
-            while ((match = componentRegex.exec(processedComponents)) !== null) {
-                const name = match[1] || match[2];
-                if (name) allComponents.add(name);
-            }
-            
-            // Find all component names in the main component
-            componentRegex.lastIndex = 0; // Reset regex index
-            while ((match = componentRegex.exec(mainComponent)) !== null) {
-                const name = match[1] || match[2];
-                if (name) allComponents.add(name);
-            }
-
             // Register each component in the window object
             allComponents.forEach(name => {
-                if (typeof window[name] === 'undefined' && typeof eval(name) === 'function') {
-                    window[name] = eval(name);
-                    console.log('Registered component:', name);
+                try {
+                    if (typeof window[name] === 'undefined') {
+                        const component = eval(name);
+                        if (typeof component === 'function') {
+                            window[name] = component;
+                            console.log('Successfully registered component:', name);
+                        }
+                    }
+                } catch (error) {
+                    console.log('Failed to register component:', name, error);
                 }
             });
         };
@@ -339,8 +337,9 @@ export class ProductionDevServerManager {
         // Register components immediately
         registerComponents();
 
-        const mainComponentName = extractMainComponent(\`${mainComponent}\`);
-        console.log('Found main component:', mainComponentName);
+        // Extract the main component name
+        const mainComponentName = Array.from(mainComponents)[0] || null;
+        console.log('Using main component:', mainComponentName);
         
         // Create a default component if none is found
         function DefaultApp() {
@@ -358,7 +357,11 @@ export class ProductionDevServerManager {
             
             if (!MainComponent) {
                 console.log('Component not found in window object:', mainComponentName);
-                console.log('Available components:', Array.from(Object.keys(window)).filter(key => typeof window[key] === 'function'));
+                console.log('Available components:', 
+                    Array.from(Object.keys(window))
+                        .filter(key => typeof window[key] === 'function')
+                        .filter(key => key !== 'AppWrapper' && key !== 'DefaultApp')
+                );
             }
 
             return (
