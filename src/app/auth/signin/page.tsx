@@ -19,7 +19,11 @@ export default function SignInPage() {
         setLoading(true);
         setError('');
 
-        const { error } = await signInWithGoogle();
+        // Get the next parameter from URL to preserve redirect after signin
+        const searchParams = new URLSearchParams(window.location.search);
+        const next = searchParams.get('next') || '/dashboard';
+
+        const { error } = await signInWithGoogle(next);
 
         if (error) {
             setError(error.message);

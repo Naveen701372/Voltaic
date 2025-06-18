@@ -19,12 +19,20 @@ export default function CreatePage() {
     const { user, loading } = useAuth();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
+    const [initialIdea, setInitialIdea] = useState<string | null>(null);
 
     useEffect(() => {
         if (!loading) {
             if (!user) {
                 router.push('/auth/signin');
             } else {
+                // Check for pending idea from homepage
+                const pendingIdea = localStorage.getItem('voltaic_pending_idea');
+                if (pendingIdea) {
+                    setInitialIdea(pendingIdea);
+                    // Clear the pending idea from localStorage
+                    localStorage.removeItem('voltaic_pending_idea');
+                }
                 setIsLoading(false);
             }
         }
@@ -42,5 +50,5 @@ export default function CreatePage() {
         return null; // Will redirect to signin
     }
 
-    return <PromptInterface />;
+    return <PromptInterface initialIdea={initialIdea} />;
 } 

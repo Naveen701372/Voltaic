@@ -13,6 +13,7 @@ export default function Home() {
   }, []);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [ideaInput, setIdeaInput] = useState('');
   const { user, signOut, loading } = useAuth();
   const router = useRouter();
 
@@ -22,6 +23,29 @@ export default function Home() {
       // User will stay on homepage after signing out
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  const handleGenerateMVP = () => {
+    if (!ideaInput.trim()) {
+      const inputElement = document.querySelector('.homepage-idea-input') as HTMLInputElement;
+      inputElement?.focus();
+      return;
+    }
+
+    localStorage.setItem('voltaic_pending_idea', ideaInput.trim());
+
+    if (user) {
+      router.push('/create');
+    } else {
+      router.push('/auth/signin?next=/create');
+    }
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleGenerateMVP();
     }
   };
 
@@ -269,11 +293,17 @@ export default function Home() {
                   </div>
                 </div>
                 <input
-                  className="glass-input w-full text-base sm:text-xl py-4 sm:py-5"
+                  className="glass-input w-full text-base sm:text-xl py-4 sm:py-5 homepage-idea-input"
                   placeholder="Describe your MVP idea... (e.g., A social platform for developers)"
+                  value={ideaInput}
+                  onChange={(e) => setIdeaInput(e.target.value)}
+                  onKeyDown={handleInputKeyDown}
                 />
                 <div className="flex justify-end">
-                  <button className="glass-button whitespace-nowrap px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
+                  <button
+                    className="glass-button whitespace-nowrap px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
+                    onClick={handleGenerateMVP}
+                  >
                     <span className="flex items-center gap-2">
                       Generate MVP
                       <Sparkles className="w-5 h-5" />

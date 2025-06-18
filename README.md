@@ -113,19 +113,26 @@ npm run dev
 
 ## 📱 Usage Flow
 
-### 1. Authentication
+### 1. Quick Start from Homepage
+- Navigate to the homepage
+- Enter your app idea in the demo input box
+- Click "Generate MVP" 
+- **If signed in**: Automatically redirected to create page with your idea
+- **If not signed in**: Redirected to sign-in, then to create page (idea is preserved)
+
+### 2. Authentication
 - Navigate to the homepage
 - Click "Get Started" or "Sign In"
 - Authenticate with Google OAuth
-- Redirected to dashboard
+- Redirected to dashboard (or /create if coming from homepage input)
 
-### 2. Create Project
+### 3. Create Project
 - Dashboard → "Create New MVP"
 - Enter your app idea (e.g., "A task management app with team collaboration")
 - Watch the multi-agent workflow in real-time
 - Get a fully functional preview
 
-### 3. Manage Projects  
+### 4. Manage Projects  
 - Dashboard → "My Projects"
 - View all generated applications
 - Open live previews

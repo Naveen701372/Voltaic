@@ -13,7 +13,11 @@ import { useRouter } from 'next/navigation';
 import { Message, GeneratedFile, AppProject, GenerationStep, AgentWorkflow } from './types';
 import { injectStyles } from './styles';
 
-export default function PromptInterface() {
+interface PromptInterfaceProps {
+    initialIdea?: string | null;
+}
+
+export default function PromptInterface({ initialIdea }: PromptInterfaceProps) {
     const { user, signOut } = useAuth();
     const router = useRouter();
 
@@ -52,6 +56,31 @@ export default function PromptInterface() {
 
         return () => clearTimeout(timer);
     }, []);
+
+    // Handle initial idea from homepage
+    useEffect(() => {
+        if (initialIdea && initialIdea.trim()) {
+            // Populate the input box with the initial idea
+            setPrompt(initialIdea);
+
+            // Auto-submit after a brief delay to ensure everything is properly set up
+            const timer = setTimeout(() => {
+                // Create a synthetic form event and submit
+                const syntheticEvent = {
+                    preventDefault: () => { },
+                } as React.FormEvent;
+
+                // Temporarily store the prompt since handleSubmit clears it
+                const ideaToSubmit = initialIdea;
+                setPrompt(''); // Clear the input as handleSubmit would do
+
+                // Call continueConversation directly with the idea
+                continueConversation(ideaToSubmit);
+            }, 800); // Small delay to let UI settle
+
+            return () => clearTimeout(timer);
+        }
+    }, [initialIdea]);
 
     // Autoscroll is now handled internally by ChatPanel with intelligent intersection detection
 
